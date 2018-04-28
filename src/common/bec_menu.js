@@ -4,21 +4,34 @@ const menuData = [{
   name: '控制台',
   icon: 'dashboard',
   path: 'dashboard',
-  children: [{
-    name: '工作台',
-    path: 'workspace',
-  }, {
-    name: '分析页',
-    path: 'analysis',
-  }, {
-    name: '监控页',
-    path: 'monitor',
-  }, {
-    name: '工作台',
-    path: 'workplace',
-    hideInBreadcrumb: true,
-    hideInMenu: true,
-  }],
+  children: [
+    {
+      name: '工作台',
+      path: 'workspace',
+    }, {
+      name: '分析页',
+      path: 'analysis',
+    }, {
+      name: '监控页',
+      path: 'monitor',
+    }, {
+      name: '工作台',
+      path: 'workplace',
+      hideInBreadcrumb: true,
+      hideInMenu: true,
+    },
+  ],
+}, {
+  name: '商品管理',
+  icon: 'appstore',
+  path: 'goods',
+  children: [
+    {
+      name: '分类管理',
+      icon: 'bars',
+      path: 'category',
+    },
+  ],
 }, {
   name: '客户分析',
   icon: 'area-chart',
