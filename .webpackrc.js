@@ -22,15 +22,27 @@ export default {
   disableDynamicImport: true,
   publicPath: '/',
   hash: true,
+  // proxy: {
+  //   '/api': {
+  //     changeOrigin: true,
+  //     target: 'http://localhost:1338/',
+  //     pathRewrite: { '^/api': 'parse' },
+  //   },
+  //   '/mail': {
+  //     changeOrigin: true,
+  //     target: 'http://localhost:1338/',
+  //     pathRewrite: { '^/mail': 'parse/apps/bee' },
+  //   },
+  // },
   proxy: {
     '/api': {
       changeOrigin: true,
-      target: 'http://localhost:1338/',
+      target: 'https://parse-server-bee.herokuapp.com/',
       pathRewrite: { '^/api': 'parse' },
     },
     '/mail': {
       changeOrigin: true,
-      target: 'http://localhost:1338/',
+      target: 'https://parse-server-bee.herokuapp.com/',
       pathRewrite: { '^/mail': 'parse/apps/bee' },
     },
   },
