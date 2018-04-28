@@ -6,7 +6,7 @@ export default class CategoryTree extends React.Component {
     super(props);
 
     this.state = {
-      loading: props.loading,
+      // loading: props.loading,
     };
   }
 

@@ -22,18 +22,6 @@ export default {
   disableDynamicImport: true,
   publicPath: '/',
   hash: true,
-  // proxy: {
-  //   '/api': {
-  //     changeOrigin: true,
-  //     target: 'http://localhost:1338/',
-  //     pathRewrite: { '^/api': 'parse' },
-  //   },
-  //   '/mail': {
-  //     changeOrigin: true,
-  //     target: 'http://localhost:1338/',
-  //     pathRewrite: { '^/mail': 'parse/apps/bee' },
-  //   },
-  // },
   proxy: {
     '/api': {
       changeOrigin: true,
