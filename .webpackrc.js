@@ -25,12 +25,12 @@ export default {
   proxy: {
     '/api': {
       changeOrigin: true,
-      target: 'https://parse-server-bee.herokuapp.com/',
+      target: 'http://becheer.com:1338/',
       pathRewrite: { '^/api': 'parse' },
     },
     '/mail': {
       changeOrigin: true,
-      target: 'https://parse-server-bee.herokuapp.com/',
+      target: 'http://becheer.com:1338/',
       pathRewrite: { '^/mail': 'parse/apps/bee' },
     },
   },
