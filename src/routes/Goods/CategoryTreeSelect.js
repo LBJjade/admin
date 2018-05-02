@@ -1,33 +1,38 @@
 import React from 'react';
-import { Card, Tree } from 'antd';
+import { TreeSelect } from 'antd';
 
-export default class CategoryTree extends React.PureComponent {
+export default class CategoryTreeSelect extends React.PureComponent {
   constructor(props) {
     super(props);
 
     this.state = {
       dataCategory: [],
+      value: '',
     };
   }
 
   componentWillReceiveProps(nextProps) {
     this.setState({
       dataCategory: nextProps.dataCategory,
+      value: nextProps.value,
     });
   }
 
   handleSelect = (selectedKeys, e) => {
-    console.log('CategoryTree onSelect event.');
-    if (this.props.onSelect) {
-      this.props.onSelect(selectedKeys, e);
-    }
+    console.log(e);
+    // if (this.props.onSelect) {
+    //   this.props.onSelect(selectedKeys, e);
+    // }
   };
 
   Tree = (data) => {
     const val = [];
     if (data) {
-      // 删除 所有 children,以防止多次调用
+      // 删除 所有 children,以防止多次调用；加入key、value、label
       data.forEach((item) => {
+        item.key = item.objectId;
+        item.value = item.objectId;
+        item.label = item.name;
         delete item.children;
       });
 
@@ -52,33 +57,11 @@ export default class CategoryTree extends React.PureComponent {
     return val;
   };
 
-  renderTreeNodes = (data) => {
-    return data.map((item) => {
-      if (item.children) {
-        return (
-          <Tree.TreeNode title={item.name} key={item.objectId} dataRef={item}>
-            {this.renderTreeNodes(item.children)}
-          </Tree.TreeNode>
-        );
-      } else {
-        return <Tree.TreeNode title={item.name} key={item.objectId} dataRef={item} />;
-      }
-    });
-  };
-
   render() {
-    const { dataCategory } = this.state;
+    const { dataCategory, value } = this.state;
     const dataTree = this.Tree(dataCategory);
     return (
-      <Card>
-        <Tree
-          defaultExpandAll
-          defaultExpandParent
-          onSelect={(selectedKeys, e) => this.handleSelect(selectedKeys, e)}
-        >
-          { this.renderTreeNodes(dataTree)}
-        </Tree>
-      </Card>
+      <TreeSelect treeData={dataTree} value={value} />
     );
   }
 }

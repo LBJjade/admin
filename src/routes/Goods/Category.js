@@ -1,29 +1,42 @@
-import React, { PureComponent } from 'react';
+import React from 'react';
 import { connect } from 'dva';
-import { Card, Row, Col, Tree, Icon, message } from 'antd';
+import { Card, Row, Col, Form, Input } from 'antd';
 import PageHeaderLayout from '../../layouts/PageHeaderLayout';
 import styles from './Category.less';
 import CategoryTree from './CategoryTree';
+import CategoryTreeSelect from './CategoryTreeSelect';
 
 @connect(({ category, loading }) => ({
   category,
   loading: loading.models.category,
 }))
-export default class Category extends PureComponent {
+@Form.create()
+export default class Category extends React.PureComponent {
   state = {
+    selectedKey: '',
+    selectedParent: '',
   };
 
+  componentWillMount() {
+    const { dispatch } = this.props;
+    dispatch({
+      type: 'category/fetchCategory',
+      payload: { count: true },
+    });
+  }
+
   handleSelect = (selectedKeys, e) => {
-    console.log(e);
+    this.setState({
+      selectedKey: selectedKeys[0],
+      selectedParent: e.selectedNodes[0].props.dataRef.parentId.objectId || '',
+    });
   };
 
   render() {
-    const loop = data => data.map((item) => {
-      if (item.children && item.children.length) {
-        return <Tree.TreeNode key={item.key} title={item.key}>{loop(item.children)}</Tree.TreeNode>;
-      }
-      return <Tree.TreeNode key={item.key} title={item.key} />;
-    });
+    const { getFieldDecorator } = this.props.form;
+    const { dataCategory } = this.props.category;
+    const { selectedKey, selectedParent } = this.state;
+
     return (
       <PageHeaderLayout
         title="分类管理"
@@ -32,11 +45,27 @@ export default class Category extends PureComponent {
       >
         <Row gutter={24}>
           <Col xl={8} lg={24} md={24} sm={24} xs={24}>
-            <CategoryTree onSelect={this.handleSelect} />
+            <CategoryTree onSelect={this.handleSelect} dataCategory={dataCategory.results} />
           </Col>
           <Col xl={16} lg={24} md={24} sm={24} xs={24}>
             <Card className={styles.card}>
-              Tree Node Props
+              <Form>
+                <Row>
+                  <Form.Item label="父级分类">
+                    <CategoryTreeSelect dataCategory={dataCategory.results} value={selectedParent} />
+                  </Form.Item>
+                </Row>
+                <Row>
+                  <Form.Item label="分类名称">
+                    {getFieldDecorator('name', {
+                      rules: [{ required: true, message: '请输入分类名称!' }],
+                    })(
+                      <Input />
+                    )}
+                  </Form.Item>
+                </Row>
+
+              </Form>
             </Card>
           </Col>
         </Row>
