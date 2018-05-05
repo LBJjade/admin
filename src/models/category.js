@@ -1,4 +1,6 @@
-import { getCategory } from '../services/goods';
+import { message } from 'antd';
+import { getCategory, putCategory } from '../services/goods';
+import { deleteFile } from '../services/file';
 
 export default {
   namespace: 'category',
@@ -18,6 +20,22 @@ export default {
       yield put({ type: 'changeCategory', payload: res });
       yield put({ type: 'changeLoading', payload: false });
     },
+
+    *coverCategory({ payload }, { call, put }) {
+      const res = yield call(putCategory, payload);
+      if (res.error === undefined) {
+        yield put({ type: 'resetCategory', payload: { ...payload, ...res } });
+        message.success('保存成功！', 3);
+      } else {
+        message.error(`保存失败！${res.error}`, 5);
+      }
+    },
+    *removeFile({ payload }, { call }) {
+      const res = yield call(deleteFile, payload);
+      if (res.error) {
+        message.error(`删除文件失败！${res.error}`, 10);
+      }
+    },
   },
 
   reducers: {
@@ -33,5 +51,14 @@ export default {
         dataCategory: action.payload,
       };
     },
+    resetCategory(state, action) {
+      return {
+        ...state,
+        dataCategory: {
+          ...action.payload,
+        },
+      };
+    },
+
   },
 };
