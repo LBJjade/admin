@@ -2,7 +2,7 @@ import { stringify } from 'qs';
 import request from '../utils/request';
 
 export async function getInformation(params) {
-  return request(`/api/classes/notices?${stringify(params)}`, {
+  return request(`/api/classes/Notices?${stringify(params)}`, {
     method: 'GET',
   });
 }
@@ -10,7 +10,7 @@ export async function getInformation(params) {
 export async function putInformation(params) {
   const editid = params.ojId;
   const data = params.fields;
-  request(`/api/classes/notices/${editid}`, {
+  request(`/api/classes/Notices/${editid}`, {
     method: 'PUT',
     body: data,
   });

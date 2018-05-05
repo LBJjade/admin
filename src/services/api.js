@@ -3,7 +3,7 @@ import request from '../utils/request';
 
 export async function queryProjectNotice() {
   // return request('/api/project/notice');
-  return request('/api/notice');
+  return request('/api/Notice');
 }
 
 export async function queryActivities() {
@@ -76,5 +76,5 @@ export async function fakeRegister(params) {
 }
 
 export async function queryNotices() {
-  return request('/api/notices');
+  return request('/api/Notices');
 }
