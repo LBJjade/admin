@@ -160,6 +160,14 @@ const menuData = [{
     name: '个人设置',
     path: 'setting',
     // hideInMenu: true,
+  }, {
+    name: '消息中心',
+    path: 'information',
+    // children: [{
+    //   name: '信息详情页',
+    //   path: 'detail',
+    //   // hideInMenu: true,
+    // }],
   }],
 }, {
   name: '使用文档',
