@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { Fragment } from 'react';
 import { Link, Redirect, Switch, Route } from 'dva/router';
 import DocumentTitle from 'react-document-title';
 import { Icon } from 'antd';
@@ -6,6 +6,7 @@ import GlobalFooter from '../components/GlobalFooter';
 import styles from './AccountLayout.less';
 import logo from '../assets/logo.svg';
 import { getRoutes } from '../utils/utils';
+import globalConfig from '../config';
 
 const links = [{
   key: 'help',
@@ -21,15 +22,13 @@ const links = [{
   href: '',
 }];
 
-const copyright = <div>Copyright <Icon type="copyright" /> 2018 品清科技体验技术部出品</div>;
-
 class AccountLayout extends React.PureComponent {
   getPageTitle() {
     const { routerData, location } = this.props;
     const { pathname } = location;
-    let title = 'Becheer Pro';
+    let title = globalConfig.appName;
     if (routerData[pathname] && routerData[pathname].name) {
-      title = `${routerData[pathname].name} - Becheer Pro`;
+      title = `${routerData[pathname].name} - ${globalConfig.appName}`;
     }
     return title;
   }
@@ -43,7 +42,7 @@ class AccountLayout extends React.PureComponent {
               <div className={styles.header}>
                 <Link to="/">
                   <img alt="logo" className={styles.logo} src={logo} />
-                  <span className={styles.title}>Becheer Pro</span>
+                  <span className={styles.title}>{ globalConfig.appName }</span>
                 </Link>
               </div>
               <div className={styles.desc}>当前最流行的Web视觉设计及UI设计规范</div>
@@ -62,7 +61,14 @@ class AccountLayout extends React.PureComponent {
               <Redirect exact from="/user" to="/user/login" />
             </Switch>
           </div>
-          <GlobalFooter links={links} copyright={copyright} />
+          <GlobalFooter
+            links={links}
+            copyright={
+              <Fragment>
+                Copyright <Icon type="copyright" />{globalConfig.copyRight.title}
+              </Fragment>
+            }
+          />
         </div>
       </DocumentTitle>
     );

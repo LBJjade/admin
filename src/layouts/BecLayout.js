@@ -15,6 +15,8 @@ import { getRoutes } from '../utils/utils';
 import Authorized from '../utils/Authorized';
 import { getMenuData } from '../common/bec_menu';
 import logo from '../assets/logo.svg';
+import globalConfig from '../config';
+
 
 const { Content, Header, Footer } = Layout;
 const { AuthorizedRoute, check } = Authorized;
@@ -111,9 +113,10 @@ class BecLayout extends React.PureComponent {
   getPageTitle() {
     const { routerData, location } = this.props;
     const { pathname } = location;
-    let title = 'Becheer Pro';
+    // let title = 'Becheer Pro';
+    let title = globalConfig.appName;
     if (routerData[pathname] && routerData[pathname].name) {
-      title = `${routerData[pathname].name} - Becheer Pro`;
+      title = `${routerData[pathname].name} - ${globalConfig.appName}`;
     }
     return title;
   }
@@ -265,7 +268,7 @@ class BecLayout extends React.PureComponent {
             <GlobalFooter
               copyright={
                 <Fragment>
-                  Copyright <Icon type="copyright" /> 2018 Becheer Inc.
+                  Copyright <Icon type="copyright" />{globalConfig.copyRight.title}
                 </Fragment>
               }
             />
