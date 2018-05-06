@@ -83,7 +83,7 @@ export default class notices extends PureComponent {
     dispatch({
       type: 'notices/coverInformation',
       payload: {
-        ojId: id,
+        objectId: id,
         fields: {
           read: true,
         },
