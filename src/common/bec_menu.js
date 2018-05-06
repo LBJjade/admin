@@ -162,7 +162,7 @@ const menuData = [{
     // hideInMenu: true,
   }, {
     name: '消息中心',
-    path: 'information',
+    path: 'Notices',
     // children: [{
     //   name: '信息详情页',
     //   path: 'detail',

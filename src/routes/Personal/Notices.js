@@ -6,13 +6,13 @@ import { List, Card, Avatar, Tabs, Tag, Spin, message } from 'antd';
 import InfiniteScroll from 'react-infinite-scroller';
 import PageHeaderLayout from '../../layouts/PageHeaderLayout';
 
-import styles from './Information.less';
+import styles from './Notices.less';
 
-@connect(({ information, loading }) => ({
-  information,
-  loading: loading.models.information,
+@connect(({ notices, loading }) => ({
+  notices,
+  loading: loading.models.notices,
 }))
-export default class BasicList extends PureComponent {
+export default class notices extends PureComponent {
   state = {
     noticeLoading: false,
     noticeHasMore: true,
@@ -38,7 +38,7 @@ export default class BasicList extends PureComponent {
       count: true,
     };
     dispatch({
-      type: 'information/fetchNotice',
+      type: 'notices/fetchNotice',
       payload: {
         where: {
           type: '通知',
@@ -51,7 +51,7 @@ export default class BasicList extends PureComponent {
       });
     });
     dispatch({
-      type: 'information/fetchNew',
+      type: 'notices/fetchNews',
       payload: {
         where: {
           type: '消息',
@@ -64,7 +64,7 @@ export default class BasicList extends PureComponent {
       });
     });
     dispatch({
-      type: 'information/fetchNeed',
+      type: 'notices/fetchNeed',
       payload: {
         where: {
           type: '待办',
@@ -81,7 +81,7 @@ export default class BasicList extends PureComponent {
   changeRead = (id) => {
     const { dispatch } = this.props;
     dispatch({
-      type: 'information/coverInformation',
+      type: 'notices/coverInformation',
       payload: {
         ojId: id,
         fields: {
@@ -92,7 +92,7 @@ export default class BasicList extends PureComponent {
   }
 
   handleInfiniteNoticeOnLoad = () => {
-    const { information: { notice } } = this.props;
+    const { notices: { notice } } = this.props;
     this.setState({
       noticeLoading: true,
     });
@@ -110,7 +110,7 @@ export default class BasicList extends PureComponent {
       return;
     }
     this.props.dispatch({
-      type: 'information/fetchNewNotice',
+      type: 'notices/fetchNewNotice',
       payload: {
         where: {
           type: '通知',
@@ -126,7 +126,7 @@ export default class BasicList extends PureComponent {
   }
 
   handleInfiniteNewsOnLoad = () => {
-    const { information: { news } } = this.props;
+    const { notices: { news } } = this.props;
     this.setState({
       newsLoading: true,
     });
@@ -144,7 +144,7 @@ export default class BasicList extends PureComponent {
       return;
     }
     this.props.dispatch({
-      type: 'information/fetchNewNotice',
+      type: 'notices/fetchNewNotice',
       payload: {
         where: {
           type: '通知',
@@ -160,7 +160,7 @@ export default class BasicList extends PureComponent {
   }
 
   handleInfiniteNeedOnLoad = () => {
-    const { information: { need } } = this.props;
+    const { notices: { need } } = this.props;
     this.setState({
       needLoading: true,
     });
@@ -178,7 +178,7 @@ export default class BasicList extends PureComponent {
       return;
     }
     this.props.dispatch({
-      type: 'information/fetchNewNeed',
+      type: 'notices/fetchNewNeed',
       payload: {
         where: {
           type: '通知',
@@ -194,7 +194,7 @@ export default class BasicList extends PureComponent {
   }
 
   render() {
-    const { information: { notice, news, need } } = this.props;
+    const { notices: { notice, news, need } } = this.props;
     const ListContent = ({ data: { createdAt } }) => (
       <div className={styles.listContent}>
         <div className={styles.listContentItem}>
