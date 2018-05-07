@@ -8,13 +8,26 @@ export async function getCategory(params) {
   });
 }
 
+export async function postCategory(params) {
+  return request('/api/classes/Category', {
+    method: 'POST',
+    body: params,
+  });
+}
+
 export async function putCategory(params) {
   const param = _.clone(params);
   const { objectId } = param;
   delete param.objectId;
   return request(`/api/classes/Category/${objectId}`, {
     method: 'PUT',
-    headers: { 'X-Parse-Session-Token': localStorage.token },
     body: param,
   });
 }
+
+export async function deleteCategory(params) {
+  return request(`/api/classes/Category/${params.objectId}`, {
+    method: 'DELETE',
+  });
+}
+

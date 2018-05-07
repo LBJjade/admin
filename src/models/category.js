@@ -1,5 +1,5 @@
 import { message } from 'antd';
-import { getCategory, putCategory } from '../services/goods';
+import { getCategory, postCategory, putCategory, deleteCategory } from '../services/goods';
 import { deleteFile } from '../services/file';
 
 export default {
@@ -7,7 +7,7 @@ export default {
 
   state: {
     loading: false,
-    dataCategory: {
+    data: {
       results: [],
       count: 0,
     },
@@ -21,15 +21,35 @@ export default {
       yield put({ type: 'changeLoading', payload: false });
     },
 
-    *coverCategory({ payload }, { call, put }) {
-      const res = yield call(putCategory, payload);
-      if (res.error === undefined) {
-        yield put({ type: 'resetCategory', payload: { ...payload, ...res } });
-        message.success('保存成功！', 3);
-      } else {
+    *storeCategory({ payload }, { call, put }) {
+      const res = yield call(postCategory, payload);
+      if (res.error) {
         message.error(`保存失败！${res.error}`, 5);
+      } else {
+        yield put({ type: 'appendCategory', payload: { ...payload, ...res } });
+        message.success('保存成功！', 3);
       }
     },
+
+    *coverCategory({ payload }, { call, put }) {
+      const res = yield call(putCategory, payload);
+      if (res.error) {
+        message.error(`保存失败！${res.error}`, 5);
+      } else {
+        yield put({ type: 'resetCategory', payload: { ...payload, ...res } });
+        message.success('保存成功！', 3);
+      }
+    },
+
+    *removeCategory({ payload }, { call, put }) {
+      const res = yield call(deleteCategory, payload);
+      if (res.error) {
+        message.error(`保存失败！${res.error}`, 5);
+      } else {
+        yield put({ type: 'clearCategory', payload: { ...payload } });
+      }
+    },
+
     *removeFile({ payload }, { call }) {
       const res = yield call(deleteFile, payload);
       if (res.error) {
@@ -48,17 +68,40 @@ export default {
     changeCategory(state, action) {
       return {
         ...state,
-        dataCategory: action.payload,
+        data: action.payload,
       };
+    },
+    appendCategory(state, action) {
+      return ({
+        ...state,
+        data: {
+          results: state.data.results.concat(action.payload),
+          count: state.data.count + 1,
+        },
+      });
     },
     resetCategory(state, action) {
-      return {
+      return ({
         ...state,
-        dataCategory: {
-          ...action.payload,
+        data: {
+          results: state.data.results.map((item) => {
+            if (item.objectId === action.payload.objectId) {
+              return { ...item, ...action.payload };
+            } else {
+              return item;
+            }
+          }),
         },
-      };
+      });
     },
-
+    clearCategory(state, action) {
+      return ({
+        ...state,
+        data: {
+          results: state.data.results.filter(item => item.objectId !== action.payload.objectId),
+          count: state.data.count - 1,
+        },
+      });
+    },
   },
 };

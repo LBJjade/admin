@@ -1,11 +1,12 @@
+/* eslint-disable max-len */
 import React from 'react';
 import { connect } from 'dva';
-import { Card, Row, Col, Form, Input, Upload, Icon, message, Button } from 'antd';
+import { Card, Row, Col, Form, Input, Upload, Icon, message, Button, TreeSelect, Switch, Divider, Popconfirm, Dropdown, Menu } from 'antd';
 import moment from 'moment';
+import SortableTree, { addNodeUnderParent, changeNodeAtPath, removeNodeAtPath } from 'react-sortable-tree';
+import 'react-sortable-tree/style.css';
 import PageHeaderLayout from '../../layouts/PageHeaderLayout';
 import styles from './Category.less';
-import CategoryTreeSelect from './CategoryTreeSelect';
-import CategoryTree from './CategoryTree';
 
 @connect(({ category, loading }) => ({
   category,
@@ -14,9 +15,12 @@ import CategoryTree from './CategoryTree';
 @Form.create()
 export default class Category extends React.PureComponent {
   state = {
-    selectedCategory: undefined,
-    selectedKey: '',
-    selectedParent: '',
+    treeData: [],
+    selectedNode: undefined,
+    selectedPath: [],
+    editing: false,
+    // '': 非新建；'child': 新建子级；'brother': 新建兄弟
+    adding: '',
   };
 
   componentWillMount() {
@@ -27,14 +31,14 @@ export default class Category extends React.PureComponent {
     });
   }
 
-  handleSelect = (selectedKeys, e) => {
-    if (selectedKeys.length > 0) {
-      this.setState({
-        selectedCategory: e.selectedNodes[0].props.dataRef,
-        selectedKey: selectedKeys[0],
-        selectedParent: e.selectedNodes[0].props.dataRef.parentId ? e.selectedNodes[0].props.dataRef.parentId.objectId : '',
-      });
+  componentWillReceiveProps(nextProps) {
+    if (nextProps.category.data) {
+      this.setState({ treeData: this.Tree(nextProps.category.data.results) });
     }
+  }
+
+  handleSelect = (selectedKeys, e) => {
+    // Todo
   };
 
   beforeUpload = (file) => {
@@ -54,11 +58,11 @@ export default class Category extends React.PureComponent {
   };
 
   handleUploadSuccess = (response) => {
-    const { selectedCategory, dispatch } = this.props;
+    const { selectedNode, dispatch } = this.props;
     const thumbUrl = response.url;
 
-    if (selectedCategory.thumb) {
-      const filename = selectedCategory.thumb.substr(selectedCategory.thumb.lastIndexOf('/') + 1);
+    if (selectedNode.thumb) {
+      const filename = selectedNode.thumb.substr(selectedNode.thumb.lastIndexOf('/') + 1);
       dispatch({
         type: 'category/removeFile',
         payload: filename,
@@ -70,7 +74,7 @@ export default class Category extends React.PureComponent {
         type: 'category/coverCategory',
         payload: {
           thumb: response.url,
-          objectId: selectedCategory.objectId,
+          objectId: selectedNode.objectId,
         },
       });
     }
@@ -82,8 +86,9 @@ export default class Category extends React.PureComponent {
       // 删除 所有 children,以防止多次调用；加入key、value、label
       data.forEach((item) => {
         item.title = item.name;
-        item.subtitle = (<span>{item.description}</span>);
+        item.subtitle = (item.description ? (<span className={styles.subtitle}>{item.description}</span>) : '');
         item.label = item.name;
+        item.id = item.objectId;
         item.key = item.objectId;
         item.value = item.objectId;
         item.expanded = true;
@@ -99,7 +104,7 @@ export default class Category extends React.PureComponent {
 
       data.forEach((item) => {
         // 以当前遍历项的parentId,去map对象中找到索引的objectId
-        const parent = map[item.parentId ? item.parentId.objectId : undefined];
+        const parent = map[item.pointerCategory ? item.pointerCategory.objectId : undefined];
         // 如果找到索引，那么说明此项不在顶级当中,那么需要把此项添加到，他对应的父级中
         if (parent) {
           (parent.children || (parent.children = [])).push(item);
@@ -173,18 +178,207 @@ export default class Category extends React.PureComponent {
     reader.readAsBinaryString(file);
   };
 
+  handleChangeNode = (treeData) => {
+    this.setState({
+      treeData,
+    });
+  };
+
+  handleClickNode = (e, rowInfo) => {
+    if (!this.state.editing) {
+      this.setState({
+        selectedNode: rowInfo.node,
+        selectedPath: rowInfo.path,
+      });
+      this.props.form.resetFields();
+    }
+  };
+
+  handleAddChildNode = (e, rowInfo) => {
+    if (!this.state.editing) {
+      this.setState({
+        selectedNode: rowInfo.node,
+        selectedPath: rowInfo.path,
+        adding: 'child',
+        editing: true,
+      });
+    }
+  };
+
+  handleAddBrotherNode = (e, rowInfo) => {
+    if (!this.state.editing) {
+      if (rowInfo) {
+        this.setState({
+          selectedNode: rowInfo.node,
+          selectedPath: rowInfo.path,
+        });
+      }
+      this.setState({
+        adding: 'brother',
+        editing: true,
+      });
+    }
+  };
+
+  handleEditNode = (e, rowInfo) => {
+    if (!this.state.editing) {
+      this.setState({
+        selectedNode: rowInfo.node,
+        selectedPath: rowInfo.path,
+        editing: true,
+      });
+    }
+  };
+
+  handleRemoveNode = (e, rowInfo) => {
+    // Todo
+    const deleteNode = rowInfo.node;
+    if (deleteNode.children) {
+      message.warn('此分类存在子分类，禁止删除！', 5);
+    } else {
+      const { dispatch } = this.props;
+      dispatch({
+        type: 'category/removeCategory',
+        payload: {
+          objectId: deleteNode.objectId,
+        },
+      });
+    }
+  };
+
+  // Called after node move operation.
+  // ({ treeData: object[], node: object, nextParentNode: object, prevPath: number[] or string[], prevTreeIndex: number, nextPath: number[] or string[], nextTreeIndex: number }): void
+  handleMoveNode = (data) => {
+    // Todo
+  };
+
+  handleSubmit = (e) => {
+    e.preventDefault();
+    this.props.form.validateFields({ force: true }, (err, values) => {
+      if (err === null || !err) {
+        // 置换pointerCategory对象
+        const pointerCategory = {
+          __type: 'Pointer',
+          className: 'Category',
+          objectId: values.pointerCategory,
+        };
+
+        let pathLevel = this.state.selectedPath.length;
+
+        if (values.objectId) {
+          if (this.state.adding === 'child') {
+            pathLevel = this.state.selectedPath.length + 1;
+          }
+          if (this.state.adding === 'brother') {
+            pathLevel = this.state.selectedPath.length;
+          }
+          this.props.dispatch({
+            type: 'category/coverCategory',
+            payload: {
+              ...values, pointerCategory, pathLevel,
+            },
+          });
+        } else {
+          pathLevel = this.state.selectedPath.length;
+
+          this.props.dispatch({
+            type: 'category/storeCategory',
+            payload: {
+              ...values, pointerCategory, pathLevel,
+            },
+          });
+        }
+
+        this.setState({
+          editing: false,
+          adding: '',
+        });
+      }
+    });
+  };
+
+  handleCancelEdit = (e) => {
+    e.preventDefault();
+    this.setState({
+      adding: '',
+      editing: false,
+    });
+  };
+
+  handleClickMenu = (menu, rowInfo) => {
+    switch (menu.key) {
+      case 'edit':
+        this.handleEditNode(menu, rowInfo);
+        break;
+      case 'add_child':
+        this.handleAddChildNode(menu, rowInfo);
+        break;
+      case 'add_brother':
+        this.handleAddBrotherNode(menu, rowInfo);
+        break;
+      case 'delete':
+        this.handleRemoveNode(menu, rowInfo);
+        break;
+      default:
+    }
+  };
+
   render() {
     const { getFieldDecorator } = this.props.form;
-    const { dataCategory } = this.props.category;
-    const dataTree = this.Tree(dataCategory.results);
-    const dataTreeSelect = [{
-      label: '顶级分类',
+    const { data } = this.props.category;
+    const categorys = this.Tree(data.results);
+    const categorysSelect = [{
+      label: '商品分类',
       key: 'top',
       value: '',
-      children: dataTree,
+      children: categorys,
     }];
-    const { selectedCategory, selectedKey, selectedParent } = this.state;
-    const thumb = selectedCategory ? selectedCategory.thumb || '' : '';
+    const { editing, adding, selectedNode } = this.state;
+
+    let title = '编辑分类';
+    let category = {
+      objecId: '',
+      name: '',
+      pointerCategory: '',
+      thumb: '',
+      description: '',
+      enabled: true,
+    };
+
+    switch (adding) {
+      case 'child':
+        category = {
+          objecId: '',
+          name: '',
+          pointerCategory: selectedNode ? selectedNode.objectId || '' : '',
+          thumb: '',
+          description: '',
+          enabled: true,
+        };
+        title = '新建分类';
+        break;
+      case 'brother':
+        category = {
+          objecId: '',
+          name: '',
+          pointerCategory: selectedNode && selectedNode.pointerCategory ? selectedNode.pointerCategory.objectId || '' : '',
+          thumb: '',
+          description: '',
+          enabled: true,
+        };
+        title = '新建分类';
+        break;
+      default:
+        category = {
+          objecId: selectedNode ? selectedNode.objectId : '',
+          name: selectedNode ? selectedNode.name : '',
+          pointerCategory: selectedNode && selectedNode.pointerCategory ? selectedNode.pointerCategory.objectId || '' : '',
+          thumb: selectedNode ? selectedNode.thumb : '',
+          description: selectedNode ? selectedNode.description : '',
+          enabled: selectedNode ? selectedNode.enabled : true,
+        };
+        break;
+    }
 
     const uploadButton = (
       <div>
@@ -192,72 +386,136 @@ export default class Category extends React.PureComponent {
         <div className="ant-upload-text">Upload</div>
       </div>
     );
+
+    const newButton = (
+      <div>
+        <Button
+          style={{ width: '100%', marginTop: 16, marginBottom: 8 }}
+          type="dashed"
+          onClick={e => this.handleAddBrotherNode(e, null)}
+          icon="plus"
+        >
+          新建分类
+        </Button>
+      </div>
+    );
+
     return (
       <PageHeaderLayout
         title="分类管理"
-        logo={<img alt="" src="https://gw.alipayobjects.com/zos/rmsportal/nxkuOJlFJuAUhzlMTCEe.png" />}
-        content="所有商品需归纳分类，提供分类信息的维护及管理。"
+        // logo={<img alt="" src="https://gw.alipayobjects.com/zos/rmsportal/nxkuOJlFJuAUhzlMTCEe.png" />}
+        // content="所有商品需归纳分类，提供分类信息的维护及管理。"
       >
         <Row gutter={24}>
-          <Col xl={14} lg={24} md={24} sm={24} xs={24}>
-            <CategoryTree treeData={dataTree} />
+          <Col xl={12} lg={24} md={24} sm={24} xs={24}>
+            <Row>
+              { categorys.length <= 0 ? newButton : '' }
+              <div style={{ height: 500 }}>
+                <SortableTree
+                  treeData={this.state.treeData}
+                  onChange={treeData => this.handleChangeNode(treeData)}
+                  onMoveNode={treeData => this.handleMoveNode(treeData)}
+                  generateNodeProps={(rowInfo) => {
+                    const propsNode = {
+                      onClick: event => this.handleClickNode(event, rowInfo),
+                      buttons: [
+                        <Dropdown
+                          // trigger={['click']}
+                          overlay={(
+                            <Menu onClick={menu => this.handleClickMenu(menu, rowInfo)}>
+                              <Menu.Item key="edit">
+                                <Icon type="edit" style={{ margin: 8, cursor: 'pointer' }} />编辑
+                              </Menu.Item>
+                              <Menu.Item key="add_child">
+                                <Icon type="plus-square-o" style={{ margin: 8, cursor: 'pointer' }} />新建下级
+                              </Menu.Item>
+                              <Menu.Item key="add_brother">
+                                <Icon type="plus" style={{ margin: 8, cursor: 'pointer' }} />新建同级
+                              </Menu.Item>
+                              <Menu.Item key="delete">
+                                <Icon type="delete" style={{ margin: 8, cursor: 'pointer' }} />删除
+                              </Menu.Item>
+                            </Menu>)}
+                        >
+
+                          <Icon type="ellipsis" style={{ margin: 8, cursor: 'pointer' }} />
+                        </Dropdown>,
+                      ],
+                    };
+                    return propsNode;
+                  }}
+                />
+              </div>
+            </Row>
           </Col>
-          <Col xl={10} lg={24} md={24} sm={24} xs={24}>
-            <Card className={styles.card}>
-              <Form>
-                <Row>
-                  <Form.Item label="父级分类">
-                    <CategoryTreeSelect dataTree={dataTreeSelect} value={selectedParent} />
-                  </Form.Item>
-                </Row>
-                <Row>
-                  <Form.Item label="分类名称">
-                    {getFieldDecorator('name', {
-                      rules: [{ required: true, message: '请输入分类名称!' }],
-                    })(
-                      <Input />
-                    )}
-                  </Form.Item>
-                </Row>
-                <Row>
-                  <Col xl={8} lg={24} md={24} sm={24} xs={24}>
-                    <Form.Item label="分类图片">
-                      <Upload
-                        name="thumb"
-                        accept="image/*"
-                        listType="picture-card"
-                        showUploadList={false}
-                        className={styles.uploader}
-                        // onChange={this.handleChange}
-                        beforeUpload={this.beforeUpload}
-                        customRequest={this.customRequest}
-                        onSuccess={this.handleUploadSuccess}
-                      >
-                        {thumb ? <img src={thumb} alt="" style={{ width: 100, height: 100 }} /> : uploadButton}
-                      </Upload>
-                    </Form.Item>
-                  </Col>
-                  <Col xl={16} lg={24} md={24} sm={24} xs={24}>
-                    <Form.Item label="分类描述">
-                      {getFieldDecorator('description', {
-                        rules: [{ required: false, message: '请输入分类描述!' }],
-                      })(
-                        <Input.TextArea autosize={{ minRows: 5, maxRows: 10 }} />
-                      )}
-                    </Form.Item>
-                  </Col>
-                </Row>
-                <Row>
-                  <Form.Item wrapperCol={{ span: 24, offset: 20 }}>
-                    <Button type="primary" htmlType="submit" >保存</Button>
-                  </Form.Item>
-                </Row>
+          <Col xl={12} lg={24} md={24} sm={24} xs={24}>
+            <Card
+              title={title}
+              className={styles.card}
+              hidden={!editing}
+            >
+              <Form onSubmit={this.handleSubmit}>
+                <Form.Item>
+                  {getFieldDecorator('objectId', {
+                    initialValue: category.objecId,
+                  })(
+                    <Input hidden />
+                  )}
+                </Form.Item>
+                <Form.Item label="父级分类" labelCol={{ span: 6 }} wrapperCol={{ span: 16 }} >
+                  {getFieldDecorator('pointerCategory', {
+                    initialValue: category.pointerCategory,
+                  })(
+                    <TreeSelect treeData={categorysSelect} placeholder="请选择父级分类" disabled={true} />
+                  )}
+                </Form.Item>
+                <Divider dashed />
+                <Form.Item label="分类名称" labelCol={{ span: 6 }} wrapperCol={{ span: 16 }}>
+                  {getFieldDecorator('name', {
+                    initialValue: category.name,
+                  })(
+                    <Input placeholder="请输入分类名称" />
+                  )}
+                </Form.Item>
+                <Form.Item label="分类描述" labelCol={{ span: 6 }} wrapperCol={{ span: 16 }}>
+                  {getFieldDecorator('description', {
+                    initialValue: category.description,
+                  })(
+                    <Input.TextArea autosize={{ minRows: 2, maxRows: 5 }} />
+                  )}
+                </Form.Item>
+                <Form.Item label="分类图片" labelCol={{ span: 6 }} wrapperCol={{ span: 16 }}>
+                  <Upload
+                    name="thumb"
+                    accept="image/*"
+                    listType="picture-card"
+                    showUploadList={false}
+                    className={styles.uploader}
+                    // onChange={this.handleChange}
+                    beforeUpload={this.beforeUpload}
+                    customRequest={this.customRequest}
+                    onSuccess={this.handleUploadSuccess}
+                  >
+                    {category.thumb ? <img src={category.thumb} alt="" style={{ width: 80, height: 80 }} /> : uploadButton}
+                  </Upload>
+                </Form.Item>
+                <Form.Item label="状态" labelCol={{ span: 6 }} wrapperCol={{ span: 16 }}>
+                  {getFieldDecorator('enabled', {
+                    valuePropName: 'checked',
+                    initialValue: category.enabled,
+                  })(
+                    <Switch checkedChildren="在用" unCheckedChildren="停用" />
+                  )}
+                </Form.Item>
+                <Form.Item wrapperCol={{ span: 20, offset: 12 }}>
+                  <Button type="default" htmlType="button" onClick={e => this.handleCancelEdit(e)} >取消</Button>
+                  <Button type="primary" htmlType="submit" >保存</Button>
+                </Form.Item>
               </Form>
             </Card>
           </Col>
         </Row>
       </PageHeaderLayout>
-
     );
   }
 }
