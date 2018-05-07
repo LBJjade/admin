@@ -10,6 +10,12 @@ export async function getUsers(params) {
   });
 }
 
+export async function getUser(params) {
+  return request(`/api/users?${stringify(params)}`, {
+    method: 'GET',
+  });
+}
+
 export async function postUser(params) {
   return request('/api/users', {
     method: 'POST',
@@ -66,5 +72,11 @@ export async function postUserAuth(params) {
   return request('/api/classes/UserAuth', {
     method: 'POST',
     body: params.values,
+  });
+}
+
+export async function getAddress(params) {
+  return request(`/api/classes/Address?${stringify(params)}`, {
+    method: 'GET',
   });
 }

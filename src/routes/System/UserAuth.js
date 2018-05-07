@@ -1,7 +1,7 @@
 import React, { PureComponent } from 'react';
 import moment from 'moment';
 import { connect } from 'dva';
-import { Form, Input, Button, Card, Tag, Tooltip, Row, Col, Select } from 'antd';
+import { Form, Input, Button, Card, Tag, Tooltip, Row, Col, Select, List, Icon } from 'antd';
 import PageHeaderLayout from '../../layouts/PageHeaderLayout';
 
 const FormItem = Form.Item;
@@ -16,7 +16,15 @@ export default class BasicForms extends PureComponent {
     // const id = localStorage.getItem('currentUserId');
     const { dispatch } = this.props;
     dispatch({
-      type: 'account/fetchCurrent',
+      type: 'account/fetchUser',
+      payload: {
+        where: {
+          objectId: this.props.match.params.id,
+        },
+      },
+    });
+    dispatch({
+      type: 'account/fetchAddress',
       payload: {
       },
     });
@@ -35,7 +43,7 @@ export default class BasicForms extends PureComponent {
     });
   }
   render() {
-    const { account: { currentUser } } = this.props;
+    const { account: { user, address } } = this.props;
     const { getFieldDecorator } = this.props.form;
     const formItemLayout = {
       labelCol: {
@@ -72,7 +80,7 @@ export default class BasicForms extends PureComponent {
                 >
                   {(
                     <Tooltip title="prompt text">
-                      <span>{currentUser.username}</span>
+                      <span>{user.username}</span>
                     </Tooltip>
                   )}
                 </FormItem>
@@ -90,7 +98,7 @@ export default class BasicForms extends PureComponent {
                 >
                   {(
                     <Tooltip title="prompt text">
-                      <span>{moment(currentUser.createdAt).format('YYYY-MM-DD hh:mm')}</span>
+                      <span>{moment(user.createdAt).format('YYYY-MM-DD hh:mm')}</span>
                     </Tooltip>
                   )}
                 </FormItem>
@@ -229,7 +237,19 @@ export default class BasicForms extends PureComponent {
             </Card>
           </Col>
           <Col span={12}>
-            <Card title="收货地址" />
+            <Card title="收货地址" >
+              <List
+                dataSource={address.results}
+                renderItem={item => (
+                  <div>
+                    <div style={{ fontWeight: 600 }}><Icon type="environment-o" />收货地址 默认</div>
+                    <div>{item.province} {item.city} {item.area}</div>
+                    <div>{item.address}</div>
+                    <br />
+                  </div>
+                )}
+              />
+            </Card>
           </Col>
         </Row>
       </PageHeaderLayout>
