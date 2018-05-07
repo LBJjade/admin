@@ -37,7 +37,7 @@ export default {
         message.error(`保存失败！${res.error}`, 5);
       } else {
         yield put({ type: 'resetCategory', payload: { ...payload, ...res } });
-        message.success('保存成功！', 3);
+        // message.success('保存成功！', 3);
       }
     },
 

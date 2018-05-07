@@ -1,9 +1,9 @@
 /* eslint-disable max-len */
 import React from 'react';
 import { connect } from 'dva';
-import { Card, Row, Col, Form, Input, Upload, Icon, message, Button, TreeSelect, Switch, Divider, Popconfirm, Dropdown, Menu } from 'antd';
+import { Card, Row, Col, Form, Input, Upload, Icon, message, Button, TreeSelect, Switch, Divider, Popconfirm, Dropdown, Menu, Modal, Affix } from 'antd';
 import moment from 'moment';
-import SortableTree, { addNodeUnderParent, changeNodeAtPath, removeNodeAtPath } from 'react-sortable-tree';
+import SortableTree, { getFlatDataFromTree, addNodeUnderParent, changeNodeAtPath, removeNodeAtPath } from 'react-sortable-tree';
 import 'react-sortable-tree/style.css';
 import PageHeaderLayout from '../../layouts/PageHeaderLayout';
 import styles from './Category.less';
@@ -262,29 +262,35 @@ export default class Category extends React.PureComponent {
           className: 'Category',
           objectId: values.pointerCategory,
         };
-
+        let path = this.state.selectedPath;
         let pathLevel = this.state.selectedPath.length;
 
+        let sort = [];
+
+        // 新建节点
         if (values.objectId) {
+          // 新建子节点
           if (this.state.adding === 'child') {
             pathLevel = this.state.selectedPath.length + 1;
           }
+          // 新建兄弟节点
           if (this.state.adding === 'brother') {
             pathLevel = this.state.selectedPath.length;
           }
           this.props.dispatch({
             type: 'category/coverCategory',
             payload: {
-              ...values, pointerCategory, pathLevel,
+              ...values, pointerCategory, path, pathLevel,
             },
           });
         } else {
+          // 修改节点
           pathLevel = this.state.selectedPath.length;
 
           this.props.dispatch({
             type: 'category/storeCategory',
             payload: {
-              ...values, pointerCategory, pathLevel,
+              ...values, pointerCategory, path, pathLevel,
             },
           });
         }
@@ -317,10 +323,41 @@ export default class Category extends React.PureComponent {
         this.handleAddBrotherNode(menu, rowInfo);
         break;
       case 'delete':
-        this.handleRemoveNode(menu, rowInfo);
+        Modal.confirm({
+          title: '确认删除该分类吗？',
+          content: '确认删除将不可恢复；建议设置停用分类。',
+          okText: '确定',
+          cancelText: '取消',
+          okType: 'danger',
+          onOk: () => this.handleRemoveNode(menu, rowInfo),
+          onCancel() {
+            // Exit;
+          },
+        });
         break;
       default:
     }
+  };
+
+  handleSort = () => {
+    getFlatDataFromTree({
+      treeData: this.state.treeData,
+      getKey: node => node.objectId,
+      getParentKey: node => node.pointerCategory.objectId,
+      getNodeKey: ({ treeIndex }) => treeIndex,
+    }).forEach((item) => {
+      if (item.node.pathIndex === undefined || item.treeIndex !== item.node.pathIndex || item.node.path === undefined || item.path !== item.node.path) {
+        this.props.dispatch({
+          type: 'category/coverCategory',
+          payload: {
+            objectId: item.node.objectId,
+            path: item.path,
+            pathLevel: item.path.length,
+            pathIndex: item.treeIndex,
+          },
+        });
+      }
+    });
   };
 
   render() {
@@ -426,12 +463,14 @@ export default class Category extends React.PureComponent {
                               <Menu.Item key="edit">
                                 <Icon type="edit" style={{ margin: 8, cursor: 'pointer' }} />编辑
                               </Menu.Item>
+                              <Menu.Divider />
                               <Menu.Item key="add_child">
                                 <Icon type="plus-square-o" style={{ margin: 8, cursor: 'pointer' }} />新建下级
                               </Menu.Item>
                               <Menu.Item key="add_brother">
                                 <Icon type="plus" style={{ margin: 8, cursor: 'pointer' }} />新建同级
                               </Menu.Item>
+                              <Menu.Divider />
                               <Menu.Item key="delete">
                                 <Icon type="delete" style={{ margin: 8, cursor: 'pointer' }} />删除
                               </Menu.Item>
@@ -447,6 +486,9 @@ export default class Category extends React.PureComponent {
                 />
               </div>
             </Row>
+            <Affix offsetBottom={0}>
+              <Button type="primary" icon="bars" onClick={() => this.handleSort()}>更新排序</Button>
+            </Affix>
           </Col>
           <Col xl={12} lg={24} md={24} sm={24} xs={24}>
             <Card
