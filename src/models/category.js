@@ -75,7 +75,7 @@ export default {
       return ({
         ...state,
         data: {
-          results: state.data.results.concat(action.payload),
+          results: state.data.results.concat(action.payload).sort(),
           count: state.data.count + 1,
         },
       });

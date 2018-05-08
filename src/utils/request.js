@@ -122,5 +122,8 @@ export function requestParams2Url(params) {
   if (params.skip) {
     url += `${url.length > 0 ? '&' : ''}skip=${params.skip}`;
   }
+  if (params.order) {
+    url += `${url.length > 0 ? '&' : ''}order=${params.order}`;
+  }
   return url.length > 0 ? `?${url}` : url;
 }

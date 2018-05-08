@@ -3,7 +3,7 @@ import React from 'react';
 import { connect } from 'dva';
 import { Card, Row, Col, Form, Input, Upload, Icon, message, Button, TreeSelect, Switch, Divider, Dropdown, Menu, Modal, Affix } from 'antd';
 import moment from 'moment';
-import SortableTree, { getFlatDataFromTree } from 'react-sortable-tree';
+import SortableTree, { getFlatDataFromTree, removeNode } from 'react-sortable-tree';
 import 'react-sortable-tree/style.css';
 import PageHeaderLayout from '../../layouts/PageHeaderLayout';
 import styles from './Category.less';
@@ -39,7 +39,10 @@ export default class Category extends React.PureComponent {
     const { dispatch } = this.props;
     dispatch({
       type: 'category/fetchCategory',
-      payload: { count: true },
+      payload: {
+        count: true,
+        order: 'pathIndex',
+      },
     });
   }
 
@@ -94,6 +97,7 @@ export default class Category extends React.PureComponent {
     this.setState({
       treeData,
     });
+    console.log('ChangeNode');
   };
 
   handleClickNode = (e, rowInfo) => {
@@ -188,7 +192,50 @@ export default class Category extends React.PureComponent {
   // Called after node move operation.
   // ({ treeData: object[], node: object, nextParentNode: object, prevPath: number[] or string[], prevTreeIndex: number, nextPath: number[] or string[], nextTreeIndex: number }): void
   handleMoveNode = (data) => {
-    // Todo
+    const { treeData, node, nextParentNode, nextPath, nextTreeIndex, path, treeIndex, prevPath, prevTreeIndex } = data;
+    const { dispatch } = this.props;
+    console.log('MoveNode');
+    if (node.pointerCategory && nextParentNode && node.pointerCategory.objectId === nextParentNode.objectId) {
+      // 父节点相同，整理排序
+      // getFlatDataFromTree({
+      //   treeData: treeData,
+      //   getKey: n => n.objectId,
+      //   getParentKey: n => n.pointerCategory.objectId,
+      //   getNodeKey: ({ ti }) => ti,
+      // }).forEach((item) => {
+      //   // if (item.node.pathIndex === undefined || item.treeIndex !== item.node.pathIndex || item.node.path === undefined || item.path.toString() !== item.node.path.toString()) {
+      //   dispatch({
+      //     type: 'category/coverCategory',
+      //     payload: {
+      //       objectId: item.node.objectId,
+      //       path: item.path,
+      //       pathLevel: item.path.length,
+      //       pathIndex: item.treeIndex,
+      //     },
+      //   });
+      //   // }
+      // });
+      // const fd = getFlatDataFromTree({
+      //   treeData: treeData,
+      //   getKey: n => n.objectId,
+      //   getParentKey: n => n.pointerCategory.objectId,
+      //   getNodeKey: ({ ti }) => ti,
+      // });
+      // console.log(fd);
+    } else {
+      // 父节点不同，更新父节点
+      dispatch({
+        type: 'category/coverCategory',
+        payload: {
+          objectId: node.objectId,
+          pointerCategory: {
+            __type: 'Pointer',
+            className: 'Category',
+            objectId: nextParentNode ? nextParentNode.objectId : '',
+          },
+        },
+      });
+    }
   };
 
   handleSubmit = (e) => {
@@ -205,6 +252,7 @@ export default class Category extends React.PureComponent {
         const { img } = this.state;
 
         const thumb = img.fileList.length > 0 ? img.fileList[0].url : '';
+        const thumbName = img.fileList.length > 0 ? img.fileList[0].name : '';
 
         let pathLevel = this.state.selectedPath.length;
 
@@ -220,7 +268,7 @@ export default class Category extends React.PureComponent {
           this.props.dispatch({
             type: 'category/coverCategory',
             payload: {
-              ...values, pointerCategory, pathLevel, thumb,
+              ...values, pointerCategory, pathLevel, thumb, thumbName,
             },
           }).then(() => {
             this.handleSort();
@@ -232,7 +280,7 @@ export default class Category extends React.PureComponent {
           this.props.dispatch({
             type: 'category/storeCategory',
             payload: {
-              ...values, pointerCategory, pathLevel, thumb,
+              ...values, pointerCategory, pathLevel, thumb, thumbName,
             },
           }).then(() => {
             this.handleSort();
@@ -283,14 +331,14 @@ export default class Category extends React.PureComponent {
     }
   };
 
-  handleSort = () => {
+  handleSort = (force = false) => {
     getFlatDataFromTree({
       treeData: this.state.treeData,
       getKey: node => node.objectId,
       getParentKey: node => node.pointerCategory.objectId,
       getNodeKey: ({ treeIndex }) => treeIndex,
     }).forEach((item) => {
-      if (item.node.pathIndex === undefined || item.treeIndex !== item.node.pathIndex || item.node.path === undefined || item.path.toString() !== item.node.path.toString()) {
+      if (force || item.node.pathIndex === undefined || item.treeIndex !== item.node.pathIndex || item.node.path === undefined || item.path.toString() !== item.node.path.toString()) {
         this.props.dispatch({
           type: 'category/coverCategory',
           payload: {
@@ -330,6 +378,7 @@ export default class Category extends React.PureComponent {
       type: 'category/coverCategory',
       payload: {
         thumb: '',
+        thumbName: '',
         objectId: selectedNode.objectId,
       },
     }).then(() => {
@@ -421,6 +470,7 @@ export default class Category extends React.PureComponent {
     const { dispatch } = this.props;
     const { selectedNode } = this.state;
     const thumbUrl = response.url;
+    const thumbName = response.name;
 
     if (selectedNode && selectedNode.thumb) {
       // 移除原有文件
@@ -436,8 +486,8 @@ export default class Category extends React.PureComponent {
         img: {
           uploading: false,
           fileList: [{
-            uid: response.name,
-            name: response.name,
+            uid: thumbName,
+            name: thumbName,
             status: 'done',
             url: thumbUrl,
           }],
@@ -463,7 +513,7 @@ export default class Category extends React.PureComponent {
 
     let title = '编辑分类';
     let category = {
-      objecId: '',
+      objectId: '',
       name: '',
       pointerCategory: '',
       thumb: '',
@@ -474,7 +524,7 @@ export default class Category extends React.PureComponent {
     switch (adding) {
       case 'child':
         category = {
-          objecId: '',
+          objectId: '',
           name: '',
           pointerCategory: selectedNode ? selectedNode.objectId || '' : '',
           thumb: '',
@@ -485,7 +535,7 @@ export default class Category extends React.PureComponent {
         break;
       case 'brother':
         category = {
-          objecId: '',
+          objectId: '',
           name: '',
           pointerCategory: selectedNode && selectedNode.pointerCategory ? selectedNode.pointerCategory.objectId || '' : '',
           thumb: '',
@@ -496,7 +546,7 @@ export default class Category extends React.PureComponent {
         break;
       default:
         category = {
-          objecId: selectedNode ? selectedNode.objectId : '',
+          objectId: selectedNode ? selectedNode.objectId : '',
           name: selectedNode ? selectedNode.name : '',
           pointerCategory: selectedNode && selectedNode.pointerCategory ? selectedNode.pointerCategory.objectId || '' : '',
           thumb: selectedNode ? selectedNode.thumb : '',
@@ -576,7 +626,7 @@ export default class Category extends React.PureComponent {
               </div>
             </Row>
             <Affix offsetBottom={0}>
-              <Button type="primary" icon="bars" onClick={() => this.handleSort()}>更新排序</Button>
+              <Button type="primary" icon="bars" onClick={() => this.handleSort(true)}>更新排序</Button>
             </Affix>
           </Col>
           <Col xl={12} lg={24} md={24} sm={24} xs={24}>
@@ -588,7 +638,7 @@ export default class Category extends React.PureComponent {
               <Form onSubmit={this.handleSubmit}>
                 <Form.Item>
                   {getFieldDecorator('objectId', {
-                    initialValue: category.objecId,
+                    initialValue: category.objectId,
                   })(
                     <Input hidden />
                   )}
