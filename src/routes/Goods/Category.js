@@ -1,9 +1,9 @@
 /* eslint-disable max-len */
 import React from 'react';
 import { connect } from 'dva';
-import { Card, Row, Col, Form, Input, Upload, Icon, message, Button, TreeSelect, Switch, Divider, Popconfirm, Dropdown, Menu, Modal, Affix } from 'antd';
+import { Card, Row, Col, Form, Input, Upload, Icon, message, Button, TreeSelect, Switch, Divider, Dropdown, Menu, Modal, Affix } from 'antd';
 import moment from 'moment';
-import SortableTree, { getFlatDataFromTree, addNodeUnderParent, changeNodeAtPath, removeNodeAtPath } from 'react-sortable-tree';
+import SortableTree, { getFlatDataFromTree } from 'react-sortable-tree';
 import 'react-sortable-tree/style.css';
 import PageHeaderLayout from '../../layouts/PageHeaderLayout';
 import styles from './Category.less';
@@ -21,6 +21,18 @@ export default class Category extends React.PureComponent {
     editing: false,
     // '': 非新建；'child': 新建子级；'brother': 新建兄弟
     adding: '',
+    img: {
+      uploading: false,
+      previewVisible: false,
+      previewImage: '',
+      // fileList: [{
+      //   uid: -1,
+      //   name: 'xxx.png',
+      //   status: 'done',
+      //   url: 'https://zos.alipayobjects.com/rmsportal/jkjgkEfvpUPVyRjUImniVslZfWPnJuuZ.png',
+      // }],
+      fileList: [],
+    },
   };
 
   componentWillMount() {
@@ -39,45 +51,6 @@ export default class Category extends React.PureComponent {
 
   handleSelect = (selectedKeys, e) => {
     // Todo
-  };
-
-  beforeUpload = (file) => {
-    const isJPG = (file.type === 'image/jpeg' || file.type === 'image/png');
-    if (!isJPG) {
-      message.error('只能上传图片文件！');
-    }
-    // const isLt2M = file.size / 1024 / 1024 < 2;
-    // if (!isLt2M) {
-    //   message.error('Image must smaller than 2MB!');
-    // }
-    const isLt2M = file.size / 1024 / 1024 < 1;
-    if (!isLt2M) {
-      message.error('图片大小必须小于1MB！');
-    }
-    return isJPG && isLt2M;
-  };
-
-  handleUploadSuccess = (response) => {
-    const { selectedNode, dispatch } = this.props;
-    const thumbUrl = response.url;
-
-    if (selectedNode.thumb) {
-      const filename = selectedNode.thumb.substr(selectedNode.thumb.lastIndexOf('/') + 1);
-      dispatch({
-        type: 'category/removeFile',
-        payload: filename,
-      });
-    }
-
-    if (thumbUrl) {
-      dispatch({
-        type: 'category/coverCategory',
-        payload: {
-          thumb: response.url,
-          objectId: selectedNode.objectId,
-        },
-      });
-    }
   };
 
   Tree = (data) => {
@@ -117,7 +90,273 @@ export default class Category extends React.PureComponent {
     return val;
   };
 
-  customRequest = ({ onSuccess, onError, file }) => {
+  handleChangeNode = (treeData) => {
+    this.setState({
+      treeData,
+    });
+  };
+
+  handleClickNode = (e, rowInfo) => {
+    if (!this.state.editing) {
+      this.setState({
+        selectedNode: rowInfo.node,
+        selectedPath: rowInfo.path,
+      });
+      this.props.form.resetFields();
+    }
+  };
+
+  handleAddChildNode = (e, rowInfo) => {
+    if (!this.state.editing) {
+      this.setState({
+        selectedNode: rowInfo.node,
+        selectedPath: rowInfo.path,
+        adding: 'child',
+        editing: true,
+      });
+    }
+  };
+
+  handleAddBrotherNode = (e, rowInfo) => {
+    if (!this.state.editing) {
+      if (rowInfo) {
+        this.setState({
+          selectedNode: rowInfo.node,
+          selectedPath: rowInfo.path,
+        });
+      }
+      this.setState({
+        adding: 'brother',
+        editing: true,
+      });
+    }
+  };
+
+  handleEditNode = (e, rowInfo) => {
+    if (!this.state.editing) {
+      this.setState({
+        selectedNode: rowInfo.node,
+        selectedPath: rowInfo.path,
+        editing: true,
+        img: {
+          uploading: false,
+          previewVisible: false,
+          previewImage: '',
+        },
+      });
+      if (rowInfo.node.thumb) {
+        this.setState({
+          img: {
+            fileList: [{
+              uid: rowInfo.node.objectId,
+              name: 'xxx.png',
+              status: 'done',
+              url: rowInfo.node.thumb,
+            }],
+          },
+        });
+      }
+    }
+  };
+
+  handleRemoveNode = (e, rowInfo) => {
+    // Todo
+    const deleteNode = rowInfo.node;
+    const file = deleteNode.thumb;
+    if (deleteNode.children) {
+      message.warn('此分类存在子分类，禁止删除！', 5);
+    } else {
+      const { dispatch } = this.props;
+      dispatch({
+        type: 'category/removeCategory',
+        payload: {
+          objectId: deleteNode.objectId,
+        },
+      }).then(() => {
+        this.handleSort();
+        if (file) {
+          const filename = file.substr(file.lastIndexOf('/') + 1);
+          dispatch({
+            type: 'category/removeFile',
+            payload: filename,
+          });
+        }
+      });
+    }
+  };
+
+  // Called after node move operation.
+  // ({ treeData: object[], node: object, nextParentNode: object, prevPath: number[] or string[], prevTreeIndex: number, nextPath: number[] or string[], nextTreeIndex: number }): void
+  handleMoveNode = (data) => {
+    // Todo
+  };
+
+  handleSubmit = (e) => {
+    e.preventDefault();
+    this.props.form.validateFields({ force: true }, (err, values) => {
+      if (err === null || !err) {
+        // 置换pointerCategory对象
+        const pointerCategory = {
+          __type: 'Pointer',
+          className: 'Category',
+          objectId: values.pointerCategory,
+        };
+
+        const { img } = this.state;
+
+        const thumb = img.fileList.length > 0 ? img.fileList[0].url : '';
+
+        let pathLevel = this.state.selectedPath.length;
+
+        // 修改节点
+        if (values.objectId) {
+          if (this.state.adding === 'child') {
+            pathLevel = this.state.selectedPath.length + 1;
+          }
+          if (this.state.adding === 'brother') {
+            pathLevel = this.state.selectedPath.length;
+          }
+
+          this.props.dispatch({
+            type: 'category/coverCategory',
+            payload: {
+              ...values, pointerCategory, pathLevel, thumb,
+            },
+          }).then(() => {
+            this.handleSort();
+          });
+        } else {
+          // 新建节点
+          pathLevel = this.state.selectedPath.length;
+
+          this.props.dispatch({
+            type: 'category/storeCategory',
+            payload: {
+              ...values, pointerCategory, pathLevel, thumb,
+            },
+          }).then(() => {
+            this.handleSort();
+          });
+        }
+
+        this.setState({
+          editing: false,
+          adding: '',
+        });
+      }
+    });
+  };
+
+  handleCancelEdit = (e) => {
+    e.preventDefault();
+    this.setState({
+      adding: '',
+      editing: false,
+    });
+  };
+
+  handleClickMenu = (menu, rowInfo) => {
+    switch (menu.key) {
+      case 'edit':
+        this.handleEditNode(menu, rowInfo);
+        break;
+      case 'add_child':
+        this.handleAddChildNode(menu, rowInfo);
+        break;
+      case 'add_brother':
+        this.handleAddBrotherNode(menu, rowInfo);
+        break;
+      case 'delete':
+        Modal.confirm({
+          title: '确认删除该分类吗？',
+          content: '确认删除将不可恢复；建议设置停用分类。',
+          okText: '确定',
+          cancelText: '取消',
+          okType: 'danger',
+          onOk: () => this.handleRemoveNode(menu, rowInfo),
+          onCancel() {
+            // Exit;
+          },
+        });
+        break;
+      default:
+    }
+  };
+
+  handleSort = () => {
+    getFlatDataFromTree({
+      treeData: this.state.treeData,
+      getKey: node => node.objectId,
+      getParentKey: node => node.pointerCategory.objectId,
+      getNodeKey: ({ treeIndex }) => treeIndex,
+    }).forEach((item) => {
+      if (item.node.pathIndex === undefined || item.treeIndex !== item.node.pathIndex || item.node.path === undefined || item.path.toString() !== item.node.path.toString()) {
+        this.props.dispatch({
+          type: 'category/coverCategory',
+          payload: {
+            objectId: item.node.objectId,
+            path: item.path,
+            pathLevel: item.path.length,
+            pathIndex: item.treeIndex,
+          },
+        });
+      }
+    });
+  };
+
+  handleImgCancel = () => {
+    this.setState({ img: { previewVisible: false } });
+  };
+
+  handleImgPreview = (file) => {
+    this.setState({
+      img: {
+        previewImage: file.url || file.thumbUrl,
+        previewVisible: true,
+      },
+    });
+  };
+
+  handleImgChange = ({ fileList }) => {
+    this.setState({ img: { fileList: fileList } });
+  };
+
+  handleImgRemove = (file) => {
+    const filename = file.url.substr(file.url.lastIndexOf('/') + 1);
+    const { dispatch } = this.props;
+    const { selectedNode } = this.state;
+
+    dispatch({
+      type: 'category/coverCategory',
+      payload: {
+        thumb: '',
+        objectId: selectedNode.objectId,
+      },
+    }).then(() => {
+      dispatch({
+        type: 'category/removeFile',
+        payload: filename,
+      });
+    });
+  };
+
+  handleImgBeforeUpload = (file) => {
+    const isJPG = (file.type === 'image/jpeg' || file.type === 'image/png');
+    if (!isJPG) {
+      message.error('只能上传图片文件！');
+    }
+    // const isLt2M = file.size / 1024 / 1024 < 2;
+    // if (!isLt2M) {
+    //   message.error('Image must smaller than 2MB!');
+    // }
+    const isLt2M = file.size / 1024 / 1024 < 1;
+    if (!isLt2M) {
+      message.error('图片大小必须小于1MB！');
+    }
+    return isJPG && isLt2M;
+  };
+
+  handleImgCustomRequest = ({ onSuccess, onError, file }) => {
     const reader = new FileReader();
 
     reader.onloadstart = () => {
@@ -178,186 +417,33 @@ export default class Category extends React.PureComponent {
     reader.readAsBinaryString(file);
   };
 
-  handleChangeNode = (treeData) => {
-    this.setState({
-      treeData,
-    });
-  };
+  handleImgUploadSuccess = (response) => {
+    const { dispatch } = this.props;
+    const { selectedNode } = this.state;
+    const thumbUrl = response.url;
 
-  handleClickNode = (e, rowInfo) => {
-    if (!this.state.editing) {
-      this.setState({
-        selectedNode: rowInfo.node,
-        selectedPath: rowInfo.path,
-      });
-      this.props.form.resetFields();
-    }
-  };
-
-  handleAddChildNode = (e, rowInfo) => {
-    if (!this.state.editing) {
-      this.setState({
-        selectedNode: rowInfo.node,
-        selectedPath: rowInfo.path,
-        adding: 'child',
-        editing: true,
-      });
-    }
-  };
-
-  handleAddBrotherNode = (e, rowInfo) => {
-    if (!this.state.editing) {
-      if (rowInfo) {
-        this.setState({
-          selectedNode: rowInfo.node,
-          selectedPath: rowInfo.path,
-        });
-      }
-      this.setState({
-        adding: 'brother',
-        editing: true,
-      });
-    }
-  };
-
-  handleEditNode = (e, rowInfo) => {
-    if (!this.state.editing) {
-      this.setState({
-        selectedNode: rowInfo.node,
-        selectedPath: rowInfo.path,
-        editing: true,
-      });
-    }
-  };
-
-  handleRemoveNode = (e, rowInfo) => {
-    // Todo
-    const deleteNode = rowInfo.node;
-    if (deleteNode.children) {
-      message.warn('此分类存在子分类，禁止删除！', 5);
-    } else {
-      const { dispatch } = this.props;
+    if (selectedNode && selectedNode.thumb) {
+      // 移除原有文件
+      const filename = selectedNode.thumb.substr(selectedNode.thumb.lastIndexOf('/') + 1);
       dispatch({
-        type: 'category/removeCategory',
-        payload: {
-          objectId: deleteNode.objectId,
+        type: 'category/removeFile',
+        payload: filename,
+      });
+    }
+
+    if (thumbUrl) {
+      this.setState({
+        img: {
+          uploading: false,
+          fileList: [{
+            uid: response.name,
+            name: response.name,
+            status: 'done',
+            url: thumbUrl,
+          }],
         },
       });
     }
-  };
-
-  // Called after node move operation.
-  // ({ treeData: object[], node: object, nextParentNode: object, prevPath: number[] or string[], prevTreeIndex: number, nextPath: number[] or string[], nextTreeIndex: number }): void
-  handleMoveNode = (data) => {
-    // Todo
-  };
-
-  handleSubmit = (e) => {
-    e.preventDefault();
-    this.props.form.validateFields({ force: true }, (err, values) => {
-      if (err === null || !err) {
-        // 置换pointerCategory对象
-        const pointerCategory = {
-          __type: 'Pointer',
-          className: 'Category',
-          objectId: values.pointerCategory,
-        };
-        let path = this.state.selectedPath;
-        let pathLevel = this.state.selectedPath.length;
-
-        let sort = [];
-
-        // 新建节点
-        if (values.objectId) {
-          // 新建子节点
-          if (this.state.adding === 'child') {
-            pathLevel = this.state.selectedPath.length + 1;
-          }
-          // 新建兄弟节点
-          if (this.state.adding === 'brother') {
-            pathLevel = this.state.selectedPath.length;
-          }
-          this.props.dispatch({
-            type: 'category/coverCategory',
-            payload: {
-              ...values, pointerCategory, path, pathLevel,
-            },
-          });
-        } else {
-          // 修改节点
-          pathLevel = this.state.selectedPath.length;
-
-          this.props.dispatch({
-            type: 'category/storeCategory',
-            payload: {
-              ...values, pointerCategory, path, pathLevel,
-            },
-          });
-        }
-
-        this.setState({
-          editing: false,
-          adding: '',
-        });
-      }
-    });
-  };
-
-  handleCancelEdit = (e) => {
-    e.preventDefault();
-    this.setState({
-      adding: '',
-      editing: false,
-    });
-  };
-
-  handleClickMenu = (menu, rowInfo) => {
-    switch (menu.key) {
-      case 'edit':
-        this.handleEditNode(menu, rowInfo);
-        break;
-      case 'add_child':
-        this.handleAddChildNode(menu, rowInfo);
-        break;
-      case 'add_brother':
-        this.handleAddBrotherNode(menu, rowInfo);
-        break;
-      case 'delete':
-        Modal.confirm({
-          title: '确认删除该分类吗？',
-          content: '确认删除将不可恢复；建议设置停用分类。',
-          okText: '确定',
-          cancelText: '取消',
-          okType: 'danger',
-          onOk: () => this.handleRemoveNode(menu, rowInfo),
-          onCancel() {
-            // Exit;
-          },
-        });
-        break;
-      default:
-    }
-  };
-
-  handleSort = () => {
-    getFlatDataFromTree({
-      treeData: this.state.treeData,
-      getKey: node => node.objectId,
-      getParentKey: node => node.pointerCategory.objectId,
-      getNodeKey: ({ treeIndex }) => treeIndex,
-    }).forEach((item) => {
-      if (item.node.pathIndex === undefined || item.treeIndex !== item.node.pathIndex || item.node.path === undefined || item.path !== item.node.path) {
-        this.props.dispatch({
-          type: 'category/coverCategory',
-          payload: {
-            objectId: item.node.objectId,
-            path: item.path,
-            pathLevel: item.path.length,
-            pathIndex: item.treeIndex,
-          },
-        });
-      }
-    });
   };
 
   render() {
@@ -371,6 +457,9 @@ export default class Category extends React.PureComponent {
       children: categorys,
     }];
     const { editing, adding, selectedNode } = this.state;
+
+    // Img
+    const { previewVisible, previewImage, fileList } = this.state.img;
 
     let title = '编辑分类';
     let category = {
@@ -419,7 +508,7 @@ export default class Category extends React.PureComponent {
 
     const uploadButton = (
       <div>
-        <Icon type={this.state.uploading ? 'loading' : 'plus'} />
+        <Icon type={this.state.img.uploading ? 'loading' : 'plus'} />
         <div className="ant-upload-text">Upload</div>
       </div>
     );
@@ -508,7 +597,7 @@ export default class Category extends React.PureComponent {
                   {getFieldDecorator('pointerCategory', {
                     initialValue: category.pointerCategory,
                   })(
-                    <TreeSelect treeData={categorysSelect} placeholder="请选择父级分类" disabled={true} />
+                    <TreeSelect treeData={categorysSelect} placeholder="请选择父级分类" disabled />
                   )}
                 </Form.Item>
                 <Divider dashed />
@@ -531,15 +620,24 @@ export default class Category extends React.PureComponent {
                     name="thumb"
                     accept="image/*"
                     listType="picture-card"
-                    showUploadList={false}
+                    // showUploadList={false}
                     className={styles.uploader}
-                    // onChange={this.handleChange}
-                    beforeUpload={this.beforeUpload}
-                    customRequest={this.customRequest}
-                    onSuccess={this.handleUploadSuccess}
+                    beforeUpload={this.handleImgBeforeUpload}
+                    customRequest={this.handleImgCustomRequest}
+                    onSuccess={this.handleImgUploadSuccess}
+                    fileList={fileList}
+                    onPreview={this.handleImgPreview}
+                    onChange={this.handleImgChange}
+                    onRemove={this.handleImgRemove}
                   >
-                    {category.thumb ? <img src={category.thumb} alt="" style={{ width: 80, height: 80 }} /> : uploadButton}
+                    {
+                      // category.thumb ? <img src={category.thumb} alt="" style={{ width: 80, height: 80 }} /> : uploadButton
+                    }
+                    {fileList && fileList.length >= 1 ? null : uploadButton}
                   </Upload>
+                  <Modal visible={previewVisible} footer={null} onCancel={() => this.handleImgCancel()}>
+                    <img alt="example" style={{ width: '100%' }} src={previewImage} />
+                  </Modal>
                 </Form.Item>
                 <Form.Item label="状态" labelCol={{ span: 6 }} wrapperCol={{ span: 16 }}>
                   {getFieldDecorator('enabled', {
