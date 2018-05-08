@@ -585,49 +585,62 @@ export default class Category extends React.PureComponent {
         <Row gutter={24}>
           <Col xl={12} lg={24} md={24} sm={24} xs={24}>
             <Row>
-              { categorys.length <= 0 ? newButton : '' }
-              <div style={{ height: 500 }}>
-                <SortableTree
-                  treeData={this.state.treeData}
-                  onChange={treeData => this.handleChangeNode(treeData)}
-                  onMoveNode={treeData => this.handleMoveNode(treeData)}
-                  generateNodeProps={(rowInfo) => {
-                    const propsNode = {
-                      onClick: event => this.handleClickNode(event, rowInfo),
-                      buttons: [
-                        <Dropdown
-                          // trigger={['click']}
-                          overlay={(
-                            <Menu onClick={menu => this.handleClickMenu(menu, rowInfo)}>
-                              <Menu.Item key="edit">
-                                <Icon type="edit" style={{ margin: 8, cursor: 'pointer' }} />编辑
-                              </Menu.Item>
-                              <Menu.Divider />
-                              <Menu.Item key="add_child">
-                                <Icon type="plus-square-o" style={{ margin: 8, cursor: 'pointer' }} />新建下级
-                              </Menu.Item>
-                              <Menu.Item key="add_brother">
-                                <Icon type="plus" style={{ margin: 8, cursor: 'pointer' }} />新建同级
-                              </Menu.Item>
-                              <Menu.Divider />
-                              <Menu.Item key="delete">
-                                <Icon type="delete" style={{ margin: 8, cursor: 'pointer' }} />删除
-                              </Menu.Item>
-                            </Menu>)}
-                        >
+              <Card>
+                { categorys.length <= 0 ? newButton : '' }
+                <div style={{
+                  height: 570,
+                  // overflow: 'scroll',
+                  // background: '#fff',
+                  // padding: 10,
+                  // margin: 10,
+                }}
+                >
+                  <SortableTree
+                    treeData={this.state.treeData}
+                    onChange={treeData => this.handleChangeNode(treeData)}
+                    onMoveNode={treeData => this.handleMoveNode(treeData)}
+                    generateNodeProps={(rowInfo) => {
+                      const propsNode = {
+                        onClick: event => this.handleClickNode(event, rowInfo),
+                        buttons: [
+                          <Dropdown
+                            // trigger={['click']}
+                            overlay={(
+                              <Menu onClick={menu => this.handleClickMenu(menu, rowInfo)}>
+                                <Menu.Item key="edit">
+                                  <Icon type="edit" style={{ margin: 8, cursor: 'pointer' }} />编辑
+                                </Menu.Item>
+                                <Menu.Divider />
+                                <Menu.Item key="add_child">
+                                  <Icon type="plus-square-o" style={{ margin: 8, cursor: 'pointer' }} />新建下级
+                                </Menu.Item>
+                                <Menu.Item key="add_brother">
+                                  <Icon type="plus" style={{ margin: 8, cursor: 'pointer' }} />新建同级
+                                </Menu.Item>
+                                <Menu.Divider />
+                                <Menu.Item key="delete">
+                                  <Icon type="delete" style={{ margin: 8, cursor: 'pointer' }} />删除
+                                </Menu.Item>
+                              </Menu>)}
+                          >
 
-                          <Icon type="ellipsis" style={{ margin: 8, cursor: 'pointer' }} />
-                        </Dropdown>,
-                      ],
-                    };
-                    return propsNode;
-                  }}
-                />
+                            <Icon type="ellipsis" style={{ margin: 8, cursor: 'pointer' }} />
+                          </Dropdown>,
+                        ],
+                      };
+                      return propsNode;
+                    }}
+                  />
+                </div>
+              </Card>
+            </Row>
+            <Row>
+              <div style={{ margin: 10 }}>
+                <Affix offsetBottom={0}>
+                  <Button type="primary" icon="bars" onClick={() => this.handleSort(true)}>更新排序</Button>
+                </Affix>
               </div>
             </Row>
-            <Affix offsetBottom={0}>
-              <Button type="primary" icon="bars" onClick={() => this.handleSort(true)}>更新排序</Button>
-            </Affix>
           </Col>
           <Col xl={12} lg={24} md={24} sm={24} xs={24}>
             <Card
