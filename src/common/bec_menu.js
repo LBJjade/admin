@@ -31,6 +31,11 @@ const menuData = [{
       icon: 'bars',
       path: 'category',
     },
+    {
+      name: '规格模版',
+      icon: 'profile',
+      path: 'spec',
+    },
   ],
 }, {
   name: '客户分析',
