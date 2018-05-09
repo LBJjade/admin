@@ -21,6 +21,11 @@ export default {
       yield put({ type: 'changeLoading', payload: false });
     },
 
+    *fetchCategorySpec({ payload }, { call, put }) {
+      const res = yield call(getCategorySpec, payload);
+      yield put({ type: 'changeCategorySpec', payload: res });
+    },
+
     *storeCategory({ payload }, { call, put }) {
       const res = yield call(postCategory, payload);
       if (res.error) {
@@ -69,6 +74,12 @@ export default {
       return {
         ...state,
         data: action.payload,
+      };
+    },
+    changeCategorySpec(state, action) {
+      return {
+        ...state,
+        CategorySpec: action.payload,
       };
     },
     appendCategory(state, action) {

@@ -22,7 +22,7 @@ export default class Spec extends React.PureComponent {
     adding: '',
   };
 
-  componentWillMount() {
+  componentDidMount() {
     const { dispatch } = this.props;
     dispatch({
       type: 'spec/fetchSpec',
@@ -47,8 +47,8 @@ export default class Spec extends React.PureComponent {
         item.title = item.name;
         item.subtitle = (item.description ? (<span className={styles.subtitle}>{item.description}</span>) : '');
         item.label = item.name;
-        item.id = item.objectId;
-        item.key = item.objectId;
+        item.id = item.pathIndex || `-${item.objectId}`;
+        item.key = item.pathIndex || `-${item.objectId}`;
         item.value = item.objectId;
         item.expanded = true;
 
@@ -149,9 +149,7 @@ export default class Spec extends React.PureComponent {
   handleMoveNode = (data) => {
     const { node, nextParentNode } = data;
     const { dispatch } = this.props;
-    if (node.pointerSpec && nextParentNode && node.pointerSpec.objectId === nextParentNode.objectId) {
-      // Todo
-    } else {
+    if (node.pointerSpec && nextParentNode && node.pointerSpec.objectId !== nextParentNode.objectId) {
       // 父节点不同，更新父节点
       dispatch({
         type: 'spec/coverSpec',

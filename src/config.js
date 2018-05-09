@@ -9,6 +9,9 @@ module.exports = {
     links: '',
   },
 
+  // 图片目录
+  imageUrl: 'http://becheer.com:1338/parse/files/bee/',
+
   // 对后端请求的相关配置
   api: {
     host: 'http://localhost:12345',

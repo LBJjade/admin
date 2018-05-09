@@ -7,6 +7,7 @@ import SortableTree, { getFlatDataFromTree, removeNode } from 'react-sortable-tr
 import 'react-sortable-tree/style.css';
 import PageHeaderLayout from '../../layouts/PageHeaderLayout';
 import styles from './Category.less';
+import globalConfig from '../../config';
 
 @connect(({ category, loading }) => ({
   category,
@@ -97,7 +98,6 @@ export default class Category extends React.PureComponent {
     this.setState({
       treeData,
     });
-    console.log('ChangeNode');
   };
 
   handleClickNode = (e, rowInfo) => {
@@ -152,10 +152,10 @@ export default class Category extends React.PureComponent {
         this.setState({
           img: {
             fileList: [{
-              uid: rowInfo.node.objectId,
-              name: 'xxx.png',
+              uid: rowInfo.node.thumb,
+              name: rowInfo.node.thumb,
               status: 'done',
-              url: rowInfo.node.thumb,
+              url: globalConfig.imageUrl + rowInfo.node.thumb,
             }],
           },
         });
@@ -194,7 +194,6 @@ export default class Category extends React.PureComponent {
   handleMoveNode = (data) => {
     const { treeData, node, nextParentNode, nextPath, nextTreeIndex, path, treeIndex, prevPath, prevTreeIndex } = data;
     const { dispatch } = this.props;
-    console.log('MoveNode');
     if (node.pointerCategory && nextParentNode && node.pointerCategory.objectId === nextParentNode.objectId) {
       // 父节点相同，整理排序
       // getFlatDataFromTree({
@@ -251,8 +250,7 @@ export default class Category extends React.PureComponent {
 
         const { img } = this.state;
 
-        const thumb = img.fileList.length > 0 ? img.fileList[0].url : '';
-        const thumbName = img.fileList.length > 0 ? img.fileList[0].name : '';
+        const thumb = img.fileList[0].name || '';
 
         let pathLevel = this.state.selectedPath.length;
 
@@ -268,7 +266,7 @@ export default class Category extends React.PureComponent {
           this.props.dispatch({
             type: 'category/coverCategory',
             payload: {
-              ...values, pointerCategory, pathLevel, thumb, thumbName,
+              ...values, pointerCategory, pathLevel, thumb,
             },
           }).then(() => {
             this.handleSort();
@@ -280,7 +278,7 @@ export default class Category extends React.PureComponent {
           this.props.dispatch({
             type: 'category/storeCategory',
             payload: {
-              ...values, pointerCategory, pathLevel, thumb, thumbName,
+              ...values, pointerCategory, pathLevel, thumb,
             },
           }).then(() => {
             this.handleSort();
@@ -378,7 +376,6 @@ export default class Category extends React.PureComponent {
       type: 'category/coverCategory',
       payload: {
         thumb: '',
-        thumbName: '',
         objectId: selectedNode.objectId,
       },
     }).then(() => {
@@ -469,27 +466,25 @@ export default class Category extends React.PureComponent {
   handleImgUploadSuccess = (response) => {
     const { dispatch } = this.props;
     const { selectedNode } = this.state;
-    const thumbUrl = response.url;
-    const thumbName = response.name;
+    const thumb = response.name;
 
     if (selectedNode && selectedNode.thumb) {
       // 移除原有文件
-      const filename = selectedNode.thumb.substr(selectedNode.thumb.lastIndexOf('/') + 1);
       dispatch({
         type: 'category/removeFile',
-        payload: filename,
+        payload: thumb,
       });
     }
 
-    if (thumbUrl) {
+    if (thumb) {
       this.setState({
         img: {
           uploading: false,
           fileList: [{
-            uid: thumbName,
-            name: thumbName,
+            uid: thumb,
+            name: thumb,
             status: 'done',
-            url: thumbUrl,
+            url: globalConfig.imageUrl + thumb,
           }],
         },
       });
@@ -708,6 +703,14 @@ export default class Category extends React.PureComponent {
                     initialValue: category.enabled,
                   })(
                     <Switch checkedChildren="在用" unCheckedChildren="停用" />
+                  )}
+                </Form.Item>
+                <Divider dashed />
+                <Form.Item label="规格模版" labelCol={{ span: 6 }} wrapperCol={{ span: 16 }}>
+                  {getFieldDecorator('pointerSpec', {
+                    initialValue: '',
+                  })(
+                    <TreeSelect />
                   )}
                 </Form.Item>
                 <Form.Item wrapperCol={{ span: 20, offset: 12 }}>

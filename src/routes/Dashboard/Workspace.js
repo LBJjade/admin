@@ -135,12 +135,13 @@ export default class Workplace extends PureComponent {
   greeting = () => {
     const hour = new Date().getHours();
     const greets = [
-      {greeting: '夜深了', dayPart: 6},
-      {greeting: '早安', dayPart: 10},
-      {greeting: '上午好', dayPart: 12},
-      {greeting: '中午好', dayPart: 14},
-      {greeting: '下午好', dayPart: 18},
-      {greeting: '晚安', dayPart: 24}];
+      { greeting: '夜深了', dayPart: 5 },
+      { greeting: '早上好', dayPart: 10 },
+      { greeting: '上午好', dayPart: 12 },
+      { greeting: '中午好', dayPart: 14 },
+      { greeting: '下午好', dayPart: 17 },
+      { greeting: '晚上好', dayPart: 19 },
+      { greeting: '晚上好', dayPart: 24 }];
     const greet = greets.filter(item => item.dayPart >= hour);
     return greet[0].greeting;
   };
