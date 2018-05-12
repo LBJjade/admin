@@ -25,7 +25,12 @@ function checkStatus(response) {
   // if (response.status >= 200 && response.status < 300) {
   if (response.status < 500) {
     return response;
+  } else {
+    // 网络或者服务器问题，注销用户重新登陆
+    const { dispatch } = store;
+    dispatch({ type: 'login/logout' });
   }
+
   const errortext = codeMessage[response.status] || response.statusText;
   notification.error({
     message: `请求错误 ${response.status}: ${response.url}`,
@@ -107,22 +112,22 @@ export function requestParams2Url(params) {
   if (params === undefined) {
     return url;
   }
-  if (params.where) {
+  if ('where' in params) {
     url += `${(url.length > 0 ? '&' : '')}where=${JSON.stringify(params.where)}`;
   }
-  if (params.include) {
+  if ('include' in params) {
     url += `${(url.length > 0 ? '&' : '')}include=${params.include}`;
   }
-  if (params.count) {
+  if ('count' in params) {
     url += `${(url.length > 0 ? '&' : '')}count=${params.count}`;
   }
-  if (params.limit) {
+  if ('limit' in params) {
     url += `${url.length > 0 ? '&' : ''}limit=${params.limit}`;
   }
-  if (params.skip) {
+  if ('skip' in params) {
     url += `${url.length > 0 ? '&' : ''}skip=${params.skip}`;
   }
-  if (params.order) {
+  if ('order' in params) {
     url += `${url.length > 0 ? '&' : ''}order=${params.order}`;
   }
   return url.length > 0 ? `?${url}` : url;

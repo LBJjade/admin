@@ -3,7 +3,7 @@ import React from 'react';
 import { connect } from 'dva';
 import { Card, Row, Col, Form, Input, Upload, Icon, message, Button, TreeSelect, Switch, Divider, Dropdown, Menu, Modal, Affix } from 'antd';
 import moment from 'moment';
-import SortableTree, { getFlatDataFromTree, removeNode } from 'react-sortable-tree';
+import SortableTree, { getFlatDataFromTree } from 'react-sortable-tree';
 import 'react-sortable-tree/style.css';
 import PageHeaderLayout from '../../layouts/PageHeaderLayout';
 import styles from './Category.less';
@@ -68,7 +68,7 @@ export default class Category extends React.PureComponent {
         item.id = item.objectId;
         item.key = item.objectId;
         item.value = item.objectId;
-        item.expanded = true;
+        // item.expanded = true;
 
         delete item.children;
       });
@@ -192,36 +192,9 @@ export default class Category extends React.PureComponent {
   // Called after node move operation.
   // ({ treeData: object[], node: object, nextParentNode: object, prevPath: number[] or string[], prevTreeIndex: number, nextPath: number[] or string[], nextTreeIndex: number }): void
   handleMoveNode = (data) => {
-    const { treeData, node, nextParentNode, nextPath, nextTreeIndex, path, treeIndex, prevPath, prevTreeIndex } = data;
+    const { treeData, node, nextParentNode } = data;
     const { dispatch } = this.props;
-    if (node.pointerCategory && nextParentNode && node.pointerCategory.objectId === nextParentNode.objectId) {
-      // 父节点相同，整理排序
-      // getFlatDataFromTree({
-      //   treeData: treeData,
-      //   getKey: n => n.objectId,
-      //   getParentKey: n => n.pointerCategory.objectId,
-      //   getNodeKey: ({ ti }) => ti,
-      // }).forEach((item) => {
-      //   // if (item.node.pathIndex === undefined || item.treeIndex !== item.node.pathIndex || item.node.path === undefined || item.path.toString() !== item.node.path.toString()) {
-      //   dispatch({
-      //     type: 'category/coverCategory',
-      //     payload: {
-      //       objectId: item.node.objectId,
-      //       path: item.path,
-      //       pathLevel: item.path.length,
-      //       pathIndex: item.treeIndex,
-      //     },
-      //   });
-      //   // }
-      // });
-      // const fd = getFlatDataFromTree({
-      //   treeData: treeData,
-      //   getKey: n => n.objectId,
-      //   getParentKey: n => n.pointerCategory.objectId,
-      //   getNodeKey: ({ ti }) => ti,
-      // });
-      // console.log(fd);
-    } else {
+    if (node.pointerCategory && nextParentNode && node.pointerCategory.objectId !== nextParentNode.objectId) {
       // 父节点不同，更新父节点
       dispatch({
         type: 'category/coverCategory',
@@ -234,6 +207,27 @@ export default class Category extends React.PureComponent {
           },
         },
       });
+    } else {
+      // this.handleSort();
+      // this.setState({ treeData });
+      // 父节点相同
+      // const sort = getFlatDataFromTree({
+      //   treeData: this.state.treeData,
+      //   getKey: n => n.objectId,
+      //   getParentKey: n => n.pointerCategory.objectId,
+      //   getNodeKey: ({ treeIndex }) => treeIndex,
+      // });
+      // sort.forEach((item) => {
+      //   this.props.dispatch({
+      //     type: 'category/coverCategory',
+      //     payload: {
+      //       objectId: item.node.objectId,
+      //       path: item.path,
+      //       pathLevel: item.path.length,
+      //       pathIndex: item.treeIndex,
+      //     },
+      //   });
+      // });
     }
   };
 
@@ -250,7 +244,7 @@ export default class Category extends React.PureComponent {
 
         const { img } = this.state;
 
-        const thumb = img.fileList[0].name || '';
+        const thumb = img.fileList.length ? img.fileList[0].name || '' : '';
 
         let pathLevel = this.state.selectedPath.length;
 
@@ -330,12 +324,21 @@ export default class Category extends React.PureComponent {
   };
 
   handleSort = (force = false) => {
-    getFlatDataFromTree({
+    const sort = getFlatDataFromTree({
       treeData: this.state.treeData,
       getKey: node => node.objectId,
       getParentKey: node => node.pointerCategory.objectId,
       getNodeKey: ({ treeIndex }) => treeIndex,
-    }).forEach((item) => {
+    });
+    // sort.sort((x, y) => {
+    //   if (x.treeIndex > y.treeIndex) {
+    //     return 1;
+    //   } else {
+    //     return -1;
+    //   }
+    // });
+    // this.setState({ treeData: sort });
+    sort.forEach((item) => {
       if (force || item.node.pathIndex === undefined || item.treeIndex !== item.node.pathIndex || item.node.path === undefined || item.path.toString() !== item.node.path.toString()) {
         this.props.dispatch({
           type: 'category/coverCategory',
