@@ -10,7 +10,13 @@ module.exports = {
   },
 
   // 图片目录
-  imageUrl: 'http://becheer.com:1338/parse/files/bee/',
+  // imageUrl: 'http://becheer.com:1338/parse/files/bee/',
+  imageUrl: 'http://localhost:1338/parse/files/bee/',
+
+  // 业务配置
+  categoryPathLimit: 2,
+  specPathLimit: 2,
+  groupPathLimit: 2,
 
   // 对后端请求的相关配置
   api: {

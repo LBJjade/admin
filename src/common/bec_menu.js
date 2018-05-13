@@ -23,9 +23,14 @@ const menuData = [{
   ],
 }, {
   name: '商品管理',
-  icon: 'appstore',
+  icon: 'shop',
   path: 'goods',
   children: [
+    {
+      name: '商品管理',
+      icon: 'appstore',
+      path: 'goodses',
+    },
     {
       name: '分类管理',
       icon: 'bars',
