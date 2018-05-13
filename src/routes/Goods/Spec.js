@@ -6,6 +6,7 @@ import SortableTree, { getFlatDataFromTree } from 'react-sortable-tree';
 import 'react-sortable-tree/style.css';
 import PageHeaderLayout from '../../layouts/PageHeaderLayout';
 import styles from './Spec.less';
+import globalConfig from '../../config';
 
 @connect(({ spec, loading }) => ({
   spec,
@@ -94,6 +95,10 @@ export default class Spec extends React.PureComponent {
 
   handleAddChildNode = (e, rowInfo) => {
     if (!this.state.editing) {
+      if (rowInfo.path.length >= globalConfig.categoryPathLimit) {
+        message.warn(`只支持${globalConfig.specPathLimit}级规格信息，禁止再新建子级！`);
+        return;
+      }
       this.setState({
         selectedNode: rowInfo.node,
         selectedPath: rowInfo.path,

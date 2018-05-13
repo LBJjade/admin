@@ -62,3 +62,42 @@ export async function deleteSpec(params) {
     method: 'DELETE',
   });
 }
+
+// CategorySpec API
+export async function getCategorySpec(params) {
+  const url = requestParams2Url(params);
+  return request(`/api/classes/CategorySpec${url}`, {
+    method: 'GET',
+  });
+}
+
+export async function postCategorySpec(params) {
+  return request('/api/classes/CategorySpec', {
+    method: 'POST',
+    body: params,
+  });
+}
+
+export async function putCategorySpec(params) {
+  const param = _.clone(params);
+  const { objectId } = param;
+  delete param.objectId;
+  return request(`/api/classes/CategorySpec/${objectId}`, {
+    method: 'PUT',
+    body: param,
+  });
+}
+
+export async function deleteCategorySpec(params) {
+  return request(`/api/classes/CategorySpec/${params.objectId}`, {
+    method: 'DELETE',
+  });
+}
+
+// Goods API
+export async function getGoods(params) {
+  const url = requestParams2Url(params);
+  return request(`/api/classes/Goods${url}`, {
+    method: 'GET',
+  });
+}

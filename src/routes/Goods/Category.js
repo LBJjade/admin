@@ -9,9 +9,11 @@ import PageHeaderLayout from '../../layouts/PageHeaderLayout';
 import styles from './Category.less';
 import globalConfig from '../../config';
 
-@connect(({ category, loading }) => ({
+@connect(({ category, loading, spec, categoryspec }) => ({
   category,
   loading: loading.models.category,
+  spec,
+  categoryspec,
 }))
 @Form.create()
 export default class Category extends React.PureComponent {
@@ -34,6 +36,8 @@ export default class Category extends React.PureComponent {
       // }],
       fileList: [],
     },
+    specData: [],
+    categoryspecData: [],
   };
 
   componentWillMount() {
@@ -45,11 +49,21 @@ export default class Category extends React.PureComponent {
         order: 'pathIndex',
       },
     });
+    dispatch({
+      type: 'spec/fetchSpec',
+      payload: {
+        count: true,
+        order: 'pathIndex',
+      },
+    });
   }
 
   componentWillReceiveProps(nextProps) {
     if (nextProps.category.data) {
       this.setState({ treeData: this.Tree(nextProps.category.data.results) });
+    }
+    if (nextProps.spec.data) {
+      this.setState({ specData: this.Tree(nextProps.spec.data.results) });
     }
   }
 
@@ -57,7 +71,7 @@ export default class Category extends React.PureComponent {
     // Todo
   };
 
-  Tree = (data) => {
+  Tree = (data, parentKey = 'pointerCategory') => {
     const val = [];
     if (data) {
       // 删除 所有 children,以防止多次调用；加入key、value、label
@@ -81,9 +95,10 @@ export default class Category extends React.PureComponent {
 
       data.forEach((item) => {
         // 以当前遍历项的parentId,去map对象中找到索引的objectId
-        const parent = map[item.pointerCategory ? item.pointerCategory.objectId : undefined];
+        const parent = map[item[parentKey] ? item[parentKey].objectId : undefined];
         // 如果找到索引，那么说明此项不在顶级当中,那么需要把此项添加到，他对应的父级中
         if (parent) {
+          item.key = `${parent.key}-${item.key}`;
           (parent.children || (parent.children = [])).push(item);
         } else {
           // 如果没有在map中找到对应的索引objectId,那么直接把 当前的item添加到 val结果集中，作为顶级
@@ -112,11 +127,22 @@ export default class Category extends React.PureComponent {
 
   handleAddChildNode = (e, rowInfo) => {
     if (!this.state.editing) {
+      if (rowInfo.path.length >= globalConfig.categoryPathLimit) {
+        message.warn(`只支持${globalConfig.categoryPathLimit}级分类信息，禁止再新建子级！`);
+        return;
+      }
+
       this.setState({
         selectedNode: rowInfo.node,
         selectedPath: rowInfo.path,
         adding: 'child',
         editing: true,
+        img: {
+          uploading: false,
+          previewVisible: false,
+          previewImage: '',
+          fileList: [],
+        },
       });
     }
   };
@@ -146,6 +172,7 @@ export default class Category extends React.PureComponent {
           uploading: false,
           previewVisible: false,
           previewImage: '',
+          fileList: [],
         },
       });
       if (rowInfo.node.thumb) {
@@ -235,6 +262,7 @@ export default class Category extends React.PureComponent {
     e.preventDefault();
     this.props.form.validateFields({ force: true }, (err, values) => {
       if (err === null || !err) {
+        const { dispatch } = this.props;
         // 置换pointerCategory对象
         const pointerCategory = {
           __type: 'Pointer',
@@ -243,7 +271,6 @@ export default class Category extends React.PureComponent {
         };
 
         const { img } = this.state;
-
         const thumb = img.fileList.length ? img.fileList[0].name || '' : '';
 
         let pathLevel = this.state.selectedPath.length;
@@ -257,19 +284,20 @@ export default class Category extends React.PureComponent {
             pathLevel = this.state.selectedPath.length;
           }
 
-          this.props.dispatch({
+          dispatch({
             type: 'category/coverCategory',
             payload: {
               ...values, pointerCategory, pathLevel, thumb,
             },
           }).then(() => {
+            const { relationSpec } = values;
             this.handleSort();
           });
         } else {
           // 新建节点
           pathLevel = this.state.selectedPath.length;
 
-          this.props.dispatch({
+          dispatch({
             type: 'category/storeCategory',
             payload: {
               ...values, pointerCategory, pathLevel, thumb,
@@ -324,21 +352,12 @@ export default class Category extends React.PureComponent {
   };
 
   handleSort = (force = false) => {
-    const sort = getFlatDataFromTree({
+    getFlatDataFromTree({
       treeData: this.state.treeData,
       getKey: node => node.objectId,
       getParentKey: node => node.pointerCategory.objectId,
       getNodeKey: ({ treeIndex }) => treeIndex,
-    });
-    // sort.sort((x, y) => {
-    //   if (x.treeIndex > y.treeIndex) {
-    //     return 1;
-    //   } else {
-    //     return -1;
-    //   }
-    // });
-    // this.setState({ treeData: sort });
-    sort.forEach((item) => {
+    }).forEach((item) => {
       if (force || item.node.pathIndex === undefined || item.treeIndex !== item.node.pathIndex || item.node.path === undefined || item.path.toString() !== item.node.path.toString()) {
         this.props.dispatch({
           type: 'category/coverCategory',
@@ -506,6 +525,9 @@ export default class Category extends React.PureComponent {
     }];
     const { editing, adding, selectedNode } = this.state;
 
+    const specData = this.props.spec.data;
+    const specs = this.Tree(specData.results, 'pointerSpec');
+
     // Img
     const { previewVisible, previewImage, fileList } = this.state.img;
 
@@ -517,6 +539,7 @@ export default class Category extends React.PureComponent {
       thumb: '',
       description: '',
       enabled: true,
+      relationSpec: [],
     };
 
     switch (adding) {
@@ -528,6 +551,7 @@ export default class Category extends React.PureComponent {
           thumb: '',
           description: '',
           enabled: true,
+          relationSpec: [],
         };
         title = '新建分类';
         break;
@@ -539,6 +563,7 @@ export default class Category extends React.PureComponent {
           thumb: '',
           description: '',
           enabled: true,
+          relationSpec: [],
         };
         title = '新建分类';
         break;
@@ -550,6 +575,7 @@ export default class Category extends React.PureComponent {
           thumb: selectedNode ? selectedNode.thumb : '',
           description: selectedNode ? selectedNode.description : '',
           enabled: selectedNode ? selectedNode.enabled : true,
+          relationSpec: selectedNode ? selectedNode.relationSpec : [],
         };
         break;
     }
@@ -621,7 +647,6 @@ export default class Category extends React.PureComponent {
                                 </Menu.Item>
                               </Menu>)}
                           >
-
                             <Icon type="ellipsis" style={{ margin: 8, cursor: 'pointer' }} />
                           </Dropdown>,
                         ],
@@ -709,11 +734,17 @@ export default class Category extends React.PureComponent {
                   )}
                 </Form.Item>
                 <Divider dashed />
-                <Form.Item label="规格模版" labelCol={{ span: 6 }} wrapperCol={{ span: 16 }}>
-                  {getFieldDecorator('pointerSpec', {
-                    initialValue: '',
+                <Form.Item label="分类规格" labelCol={{ span: 6 }} wrapperCol={{ span: 16 }} >
+                  {getFieldDecorator('relationSpec', {
+                    valuePropName: 'value',
+                    initialValue: category.relationSpec,
                   })(
-                    <TreeSelect />
+                    <TreeSelect
+                      treeData={specs}
+                      treeCheckable={true}
+                      showCheckedStrategy={TreeSelect.SHOW_PARENT}
+                      placeholder="请选择分类规格"
+                    />
                   )}
                 </Form.Item>
                 <Form.Item wrapperCol={{ span: 20, offset: 12 }}>

@@ -25,12 +25,12 @@ export default {
   proxy: {
     '/api': {
       changeOrigin: true,
-      target: 'http://becheer.com:1338/',
+      target: 'http://localhost:1338/',
       pathRewrite: { '^/api': 'parse' },
     },
     '/mail': {
       changeOrigin: true,
-      target: 'http://becheer.com:1338/',
+      target: 'http://localhost:1338/',
       pathRewrite: { '^/mail': 'parse/apps/bee' },
     },
   },

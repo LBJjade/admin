@@ -49,13 +49,6 @@ export default {
         yield put({ type: 'clearSpec', payload: { ...payload } });
       }
     },
-
-    *removeFile({ payload }, { call }) {
-      const res = yield call(deleteFile, payload);
-      if (res.error) {
-        message.error(`删除文件失败！${res.error}`, 10);
-      }
-    },
   },
 
   reducers: {
