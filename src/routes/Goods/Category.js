@@ -149,6 +149,12 @@ export default class Category extends React.PureComponent {
       this.setState({
         adding: 'brother',
         editing: true,
+        img: {
+          uploading: false,
+          previewVisible: false,
+          previewImage: '',
+          fileList: [],
+        },
       });
     }
   };
@@ -782,6 +788,7 @@ export default class Category extends React.PureComponent {
                       treeCheckable={true}
                       showCheckedStrategy={TreeSelect.SHOW_PARENT}
                       placeholder="请选择分类规格"
+                      size="large"
                     />
                   )}
                 </Form.Item>

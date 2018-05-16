@@ -1,8 +1,7 @@
 import React from 'react';
 import { Row, Col, Card, Icon, Carousel, Tag } from 'antd';
-import styles from './Card.less';
+import styles from './GoodsCard.less';
 import globalConfig from '../../../config';
-
 
 class ImageCard extends React.Component {
   render() {
@@ -14,7 +13,7 @@ class ImageCard extends React.Component {
           {
             imageData && imageData.map((v, k) => {
               return (
-                <Col xs={12} sm={12} md={12} lg={6} xl={6} key={k}>
+                <Col lg={6} key={k} >
                   <Card
                     bordered={false}
                     hoverable
@@ -35,7 +34,7 @@ class ImageCard extends React.Component {
                       <p>{v.title}</p>
                     </div>
                     <div className={styles.card_footer}>
-                      <h4>{v.footerTitle}</h4>
+                      <Tag color={v.categoryColor ? v.categoryColor : 'gold'}>{v.categoryName}</Tag>
                       <div className={styles.position}>
                         <Icon type="shop" style={{ margin: 5 }} />{v.shop}
                       </div>

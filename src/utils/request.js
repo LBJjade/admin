@@ -32,9 +32,13 @@ function checkStatus(response) {
   }
 
   const errortext = codeMessage[response.status] || response.statusText;
+  // notification.error({
+  //   message: `请求错误 ${response.status}: ${response.url}`,
+  //   description: errortext,
+  // });
   notification.error({
-    message: `请求错误 ${response.status}: ${response.url}`,
-    description: errortext,
+    message: '网络请求错误或服务不可用，请重新登录！',
+    description: `请求错误 ${response.status}`,
   });
   const error = new Error(errortext);
   error.name = response.status;
