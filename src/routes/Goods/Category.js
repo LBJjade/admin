@@ -60,16 +60,13 @@ export default class Category extends React.PureComponent {
 
   componentWillReceiveProps(nextProps) {
     if (nextProps.category.data) {
-      this.setState({ treeData: this.Tree(nextProps.category.data.results) });
+      const data = nextProps.category.data.results.sort((a, b) => (a.pathIndex > b.pathIndex ? 1 : -1))
+      this.setState({ treeData: this.Tree(data) });
     }
     if (nextProps.spec.data) {
       this.setState({ specData: this.Tree(nextProps.spec.data.results) });
     }
   }
-
-  handleSelect = (selectedKeys, e) => {
-    // Todo
-  };
 
   Tree = (data, parentKey = 'pointerCategory') => {
     const val = [];
@@ -107,12 +104,6 @@ export default class Category extends React.PureComponent {
       });
     }
     return val;
-  };
-
-  handleChangeNode = (treeData) => {
-    this.setState({
-      treeData,
-    });
   };
 
   handleClickNode = (e, rowInfo) => {
@@ -216,13 +207,22 @@ export default class Category extends React.PureComponent {
     }
   };
 
+  handleChangeNode = (treeData) => {
+    this.setState({
+      treeData,
+    });
+  };
+
   // Called after node move operation.
   // ({ treeData: object[], node: object, nextParentNode: object, prevPath: number[] or string[], prevTreeIndex: number, nextPath: number[] or string[], nextTreeIndex: number }): void
   handleMoveNode = (data) => {
     const { treeData, node, nextParentNode } = data;
     const { dispatch } = this.props;
-    if (node.pointerCategory && nextParentNode && node.pointerCategory.objectId !== nextParentNode.objectId) {
-      // 父节点不同，更新父节点
+    const parentObjectId = node.pointerCategory ? node.pointerCategory.objectId || '' : '';
+    const nextParentObjectId = nextParentNode ? nextParentNode.objectId || '' : '';
+
+    // 父节点不同，更新父节点
+    if (parentObjectId !== nextParentObjectId) {
       dispatch({
         type: 'category/coverCategory',
         payload: {
@@ -230,33 +230,92 @@ export default class Category extends React.PureComponent {
           pointerCategory: {
             __type: 'Pointer',
             className: 'Category',
-            objectId: nextParentNode ? nextParentNode.objectId : '',
+            objectId: nextParentObjectId,
           },
         },
       });
-    } else {
-      // this.handleSort();
-      // this.setState({ treeData });
-      // 父节点相同
-      // const sort = getFlatDataFromTree({
-      //   treeData: this.state.treeData,
-      //   getKey: n => n.objectId,
-      //   getParentKey: n => n.pointerCategory.objectId,
-      //   getNodeKey: ({ treeIndex }) => treeIndex,
-      // });
-      // sort.forEach((item) => {
-      //   this.props.dispatch({
-      //     type: 'category/coverCategory',
-      //     payload: {
-      //       objectId: item.node.objectId,
-      //       path: item.path,
-      //       pathLevel: item.path.length,
-      //       pathIndex: item.treeIndex,
-      //     },
-      //   });
-      // });
     }
   };
+
+  handleSort = () => {
+    const { dispatch } = this.props;
+    const { treeData } = this.state;
+
+    let level = 1;
+    let sort = 0;
+    treeData.forEach((item) => {
+      level = 1;
+
+      dispatch({
+        type: 'category/coverCategory',
+        payload: {
+          objectId: item.objectId,
+          pathLevel: level,
+          pathIndex: sort,
+        },
+      });
+      sort += 1;
+
+      if (item.children) {
+        level = 2;
+        item.children.forEach((child) => {
+          dispatch({
+            type: 'category/coverCategory',
+            payload: {
+              objectId: child.objectId,
+              pathLevel: level,
+              pathIndex: sort,
+            },
+          });
+          sort += 1;
+        });
+      }
+    });
+  };
+
+  // handleSort = () => {
+  //   const { dispatch } = this.props;
+  //   const { treeData } = this.state;
+  //   const { data } = this.props;
+  //   const flatData = getFlatDataFromTree({
+  //     treeData: this.state.treeData,
+  //     getKey: node => node.objectId,
+  //     getParentKey: node => node.pointerCategory.objectId,
+  //     getNodeKey: ({ treeIndex }) => treeIndex,
+  //   });
+  //   flatData.forEach((item, index, items) => {
+  //     const treePath = item.path ? item.path.toString() : '';
+  //     const dataPath = item.node.path ? item.node.path.toString() : '';
+  //
+  //     const node = item
+  //
+  //     if (item.node.objectId) {
+  //       dispatch({
+  //         type: 'category/coverCategory',
+  //         payload: {
+  //           objectId: item.node.objectId,
+  //           path: item.path,
+  //           pathLevel: item.path.length,
+  //           pathIndex: item.treeIndex,
+  //         },
+  //       });
+  //       if (item.children) {
+  //         item.children.forEach((child, childIndex, children) => {
+  //           dispatch({
+  //             type: 'category/coverCategory',
+  //             payload: {
+  //               objectId: item.children.node.objectId,
+  //               path: item.children.path,
+  //               pathLevel: item.children.path.length,
+  //               pathIndex: item.children.treeIndex,
+  //             },
+  //           });
+  //         });
+  //       }
+  //     }
+  //   });
+  // };
+
 
   handleSubmit = (e) => {
     e.preventDefault();
@@ -349,27 +408,6 @@ export default class Category extends React.PureComponent {
         break;
       default:
     }
-  };
-
-  handleSort = (force = false) => {
-    getFlatDataFromTree({
-      treeData: this.state.treeData,
-      getKey: node => node.objectId,
-      getParentKey: node => node.pointerCategory.objectId,
-      getNodeKey: ({ treeIndex }) => treeIndex,
-    }).forEach((item) => {
-      if (force || item.node.pathIndex === undefined || item.treeIndex !== item.node.pathIndex || item.node.path === undefined || item.path.toString() !== item.node.path.toString()) {
-        this.props.dispatch({
-          type: 'category/coverCategory',
-          payload: {
-            objectId: item.node.objectId,
-            path: item.path,
-            pathLevel: item.path.length,
-            pathIndex: item.treeIndex,
-          },
-        });
-      }
-    });
   };
 
   handleImgCancel = () => {
@@ -660,7 +698,7 @@ export default class Category extends React.PureComponent {
             <Row>
               <div style={{ margin: 10 }}>
                 <Affix offsetBottom={0}>
-                  <Button type="primary" icon="bars" onClick={() => this.handleSort(true)}>更新排序</Button>
+                  <Button type="primary" icon="bars" onClick={() => this.handleSort()}>更新排序</Button>
                 </Affix>
               </div>
             </Row>
