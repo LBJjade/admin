@@ -26,7 +26,6 @@ export default class Goodses extends React.Component {
     });
   }
 
-
   handleClick = (item) => {
     const url = `/goods/goods/${item.objectId}`;
     this.props.dispatch(routerRedux.push(url));

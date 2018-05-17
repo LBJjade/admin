@@ -13,6 +13,9 @@ module.exports = {
   imageUrl: 'http://becheer.com:1338/parse/files/bee/',
   // imageUrl: 'http://localhost:1338/parse/files/bee/',
 
+  // 图片大小限制
+  imageLimit: 1 * 1024 * 1024,
+
   // 业务配置
   categoryPathLimit: 2,
   specPathLimit: 2,

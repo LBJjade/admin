@@ -1,0 +1,205 @@
+/* eslint-disable camelcase,no-undef */
+
+export async function get$MODULE_NAME$(params) {
+  const url = requestParams2Url(params);
+  return request(`/api/classes/$MODULE_NAME$${url}`, {
+    method: 'GET',
+  });
+}
+
+export async function post$MODULE_NAME$(params) {
+  return request('/api/classes/$MODULE_NAME$', {
+    method: 'POST',
+    body: params,
+  });
+}
+
+export async function put$MODULE_NAME$(params) {
+  const param = _.clone(params);
+  const { objectId } = param;
+  delete param.objectId;
+  return request(`/api/classes/$MODULE_NAME$/${objectId}`, {
+    method: 'PUT',
+    body: param,
+  });
+}
+
+export async function delete$MODULE_NAME$(params) {
+  return request(`/api/classes/$MODULE_NAME$/${params.objectId}`, {
+    method: 'DELETE',
+  });
+}
+
+*fetch$MODULE_NAME$({ payload }, { call, put }) {
+  const respon = yield call(get$MODULE_NAME$, payload);
+  yield put({ type: 'query$MODULE_NAME$', payload: respon });
+},
+
+query$MODULE_NAME$(state, action) {
+  return {
+    ...state,
+    $MODULE_NAME$: action.payload,
+  };
+},
+
+*store$MODULE_NAME$({ payload }, { call, put }) {
+  const respon = yield call(post$MODULE_NAME$, payload);
+  if (respon.error) {
+    message.error(`保存失败！${respon.error}`, 5);
+  } else {
+    yield put({ type: 'append$MODULE_NAME$', payload: { ...payload, ...respon } });
+    message.success('保存成功！', 3);
+  }
+},
+
+append$MODULE_NAME$(state, action) {
+  return ({
+    ...state,
+    $MODULE_NAME$: {
+      results: state.$MODULE_NAME$.results.concat(action.payload),
+      count: state.data.count + 1,
+    },
+  });
+},
+
+*cover$MODULE_NAME$({ payload }, { call, put }) {
+  const res = yield call(put$MODULE_NAME$, payload);
+  if (res.error) {
+    message.error(`保存失败！${res.error}`, 5);
+  } else {
+    yield put({ type: 'reset$MODULE_NAME$', payload: { ...payload, ...res } });
+    message.success('保存成功！', 3);
+  }
+},
+
+reset$MODULE_NAME$(state, action) {
+  return ({
+    ...state,
+    $MODULE_NAME$: {
+      results: state.$MODULE_NAME$.results.map((item) => {
+        if (item.objectId === action.payload.objectId) {
+          return { ...item, ...action.payload };
+        } else {
+          return item;
+        }
+      }),
+    },
+  });
+},
+
+*remove$MODULE_NAME$({ payload }, { call, put }) {
+  const res = yield call(delete$MODULE_NAME$, payload);
+  if (res.error) {
+    message.error(`保存失败！${res.error}`, 5);
+  } else {
+    yield put({ type: 'clear$MODULE_NAME$', payload: { ...payload } });
+  }
+},
+
+clear$MODULE_NAME$(state, action) {
+  return ({
+    ...state,
+    $MODULE_NAME$: {
+      results: state.$MODULE_NAME$.results.filter(item => item.objectId !== action.payload.objectId),
+      count: state.$MODULE_NAME$.count - 1,
+    },
+  });
+},
+
+
+
+
+//// =============================================== model.js ============================================== ////
+
+/* eslint-disable object-curly-spacing */
+import { message } from 'antd';
+import { get$MODULE_NAME$, post$MODULE_NAME$, put$MODULE_NAME$, delete$MODULE_NAME$ } from '../services/$MODULE_NAME$';
+
+export default {
+  namespace: '$MODULE_NAME_LOWER$',
+
+  state: {
+    $MODULE_NAME_LOWER$: {
+      results: [],
+      count: 0,
+    },
+  },
+
+  effects: {
+    // $MODULE_NAME$
+    *fetch$MODULE_NAME$({ payload }, { call, put }) {
+      const respon = yield call(get$MODULE_NAME$, payload);
+      yield put({ type: 'query$MODULE_NAME$', payload: respon });
+    },
+    *store$MODULE_NAME$({ payload }, { call, put }) {
+      const respon = yield call(post$MODULE_NAME$, payload);
+      if (respon.error) {
+        message.error(`保存失败！${respon.error}`, 5);
+      } else {
+        yield put({ type: 'append$MODULE_NAME$', payload: { ...payload, ...respon } });
+        message.success('保存成功！', 3);
+      }
+    },
+    *cover$MODULE_NAME$({ payload }, { call, put }) {
+      const respon = yield call(put$MODULE_NAME$, payload);
+      if (respon.error) {
+        message.error(`保存失败！${respon.error}`, 5);
+      } else {
+        yield put({ type: 'reset$MODULE_NAME$', payload: { ...payload, ...respon } });
+        message.success('保存成功！', 3);
+      }
+    },
+    *remove$MODULE_NAME$({ payload }, { call, put }) {
+      const respon = yield call(delete$MODULE_NAME$, payload);
+      if (respon.error) {
+        message.error(`删除失败！${respon.error}`, 5);
+      } else {
+        yield put({ type: 'clear$MODULE_NAME$', payload: { ...payload } });
+        message.success('删除成功！', 3);
+      }
+    },
+  },
+
+  reducers: {
+    // $MODULE_NAME$:
+    query$MODULE_NAME$(state, action) {
+      return {
+        ...state,
+        $MODULE_NAME_LOWER$: action.payload,
+      };
+    },
+    append$MODULE_NAME$(state, action) {
+      return ({
+        ...state,
+        $MODULE_NAME_LOWER$: {
+          results: state.$MODULE_NAME_LOWER$.results.concat(action.payload),
+          count: state.$MODULE_NAME_LOWER$.count + 1,
+        },
+      });
+    },
+    reset$MODULE_NAME$(state, action) {
+      return ({
+        ...state,
+        $MODULE_NAME_LOWER$: {
+          results: state.$MODULE_NAME_LOWER$.results.map((item) => {
+            if (item.objectId === action.payload.objectId) {
+              return { ...item, ...action.payload };
+            } else {
+              return item;
+            }
+          }),
+        },
+      });
+    },
+    clear$MODULE_NAME$(state, action) {
+      return ({
+        ...state,
+        $MODULE_NAME_LOWER$: {
+          results: state.$MODULE_NAME_LOWER$.results.filter(item => item.objectId !== action.payload.objectId),
+          count: state.$MODULE_NAME_LOWER$.count - 1,
+        },
+      });
+    },
+  },
+};
+

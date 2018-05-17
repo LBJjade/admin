@@ -6,17 +6,15 @@ import moment from 'moment';
 import SortableTree, { getFlatDataFromTree } from 'react-sortable-tree';
 import 'react-sortable-tree/style.css';
 import PageHeaderLayout from '../../layouts/PageHeaderLayout';
-import styles from './Category.less';
+import styles from './Group.less';
 import globalConfig from '../../config';
 
-@connect(({ category, loading, spec, categoryspec }) => ({
-  category,
-  loading: loading.models.category,
-  spec,
-  categoryspec,
+@connect(({ group, loading }) => ({
+  group,
+  loading: loading.models.group,
 }))
 @Form.create()
-export default class Category extends React.PureComponent {
+export default class Group extends React.PureComponent {
   state = {
     treeData: [],
     selectedNode: undefined,
@@ -36,21 +34,12 @@ export default class Category extends React.PureComponent {
       // }],
       fileList: [],
     },
-    specData: [],
-    categoryspecData: [],
   };
 
   componentWillMount() {
     const { dispatch } = this.props;
     dispatch({
-      type: 'category/fetchCategory',
-      payload: {
-        count: true,
-        order: 'pathIndex',
-      },
-    });
-    dispatch({
-      type: 'spec/fetchSpec',
+      type: 'group/fetchGroup',
       payload: {
         count: true,
         order: 'pathIndex',
@@ -59,16 +48,13 @@ export default class Category extends React.PureComponent {
   }
 
   componentWillReceiveProps(nextProps) {
-    if (nextProps.category.data) {
-      const data = nextProps.category.data.results.sort((a, b) => (a.pathIndex > b.pathIndex ? 1 : -1))
-      this.setState({ treeData: this.Tree(data) });
-    }
-    if (nextProps.spec.data) {
-      this.setState({ specData: this.Tree(nextProps.spec.data.results) });
+    if (nextProps.group.group) {
+      const groups = nextProps.group.group.results.sort((a, b) => (a.pathIndex > b.pathIndex ? 1 : -1));
+      this.setState({ treeData: this.Tree(groups) });
     }
   }
 
-  Tree = (data, parentKey = 'pointerCategory') => {
+  Tree = (data, parentKey = 'pointerGroup') => {
     const val = [];
     if (data) {
       // 删除 所有 children,以防止多次调用；加入key、value、label
@@ -118,8 +104,8 @@ export default class Category extends React.PureComponent {
 
   handleAddChildNode = (e, rowInfo) => {
     if (!this.state.editing) {
-      if (rowInfo.path.length >= globalConfig.categoryPathLimit) {
-        message.warn(`只支持${globalConfig.categoryPathLimit}级分类信息，禁止再新建子级！`);
+      if (rowInfo.path.length >= globalConfig.groupPathLimit) {
+        message.warn(`只支持${globalConfig.groupPathLimit}级分组信息，禁止再新建子级！`);
         return;
       }
 
@@ -192,11 +178,11 @@ export default class Category extends React.PureComponent {
     const deleteNode = rowInfo.node;
     const file = deleteNode.thumb;
     if (deleteNode.children) {
-      message.warn('此分类存在子分类，禁止删除！', 5);
+      message.warn('此分组存在子分组，禁止删除！', 5);
     } else {
       const { dispatch } = this.props;
       dispatch({
-        type: 'category/removeCategory',
+        type: 'group/removeGroup',
         payload: {
           objectId: deleteNode.objectId,
         },
@@ -205,7 +191,7 @@ export default class Category extends React.PureComponent {
         if (file) {
           const filename = file.substr(file.lastIndexOf('/') + 1);
           dispatch({
-            type: 'category/removeFile',
+            type: 'group/removeFile',
             payload: filename,
           });
         }
@@ -224,18 +210,18 @@ export default class Category extends React.PureComponent {
   handleMoveNode = (data) => {
     const { treeData, node, nextParentNode } = data;
     const { dispatch } = this.props;
-    const parentObjectId = node.pointerCategory ? node.pointerCategory.objectId || '' : '';
+    const parentObjectId = node.pointerGroup ? node.pointerGroup.objectId || '' : '';
     const nextParentObjectId = nextParentNode ? nextParentNode.objectId || '' : '';
 
     // 父节点不同，更新父节点
     if (parentObjectId !== nextParentObjectId) {
       dispatch({
-        type: 'category/coverCategory',
+        type: 'group/coverGroup',
         payload: {
           objectId: node.objectId,
-          pointerCategory: {
+          pointerGroup: {
             __type: 'Pointer',
-            className: 'Category',
+            className: 'Group',
             objectId: nextParentObjectId,
           },
         },
@@ -253,7 +239,7 @@ export default class Category extends React.PureComponent {
       level = 1;
 
       dispatch({
-        type: 'category/coverCategory',
+        type: 'group/coverGroup',
         payload: {
           objectId: item.objectId,
           pathLevel: level,
@@ -266,7 +252,7 @@ export default class Category extends React.PureComponent {
         level = 2;
         item.children.forEach((child) => {
           dispatch({
-            type: 'category/coverCategory',
+            type: 'group/coverGroup',
             payload: {
               objectId: child.objectId,
               pathLevel: level,
@@ -279,60 +265,16 @@ export default class Category extends React.PureComponent {
     });
   };
 
-  // handleSort = () => {
-  //   const { dispatch } = this.props;
-  //   const { treeData } = this.state;
-  //   const { data } = this.props;
-  //   const flatData = getFlatDataFromTree({
-  //     treeData: this.state.treeData,
-  //     getKey: node => node.objectId,
-  //     getParentKey: node => node.pointerCategory.objectId,
-  //     getNodeKey: ({ treeIndex }) => treeIndex,
-  //   });
-  //   flatData.forEach((item, index, items) => {
-  //     const treePath = item.path ? item.path.toString() : '';
-  //     const dataPath = item.node.path ? item.node.path.toString() : '';
-  //
-  //     const node = item
-  //
-  //     if (item.node.objectId) {
-  //       dispatch({
-  //         type: 'category/coverCategory',
-  //         payload: {
-  //           objectId: item.node.objectId,
-  //           path: item.path,
-  //           pathLevel: item.path.length,
-  //           pathIndex: item.treeIndex,
-  //         },
-  //       });
-  //       if (item.children) {
-  //         item.children.forEach((child, childIndex, children) => {
-  //           dispatch({
-  //             type: 'category/coverCategory',
-  //             payload: {
-  //               objectId: item.children.node.objectId,
-  //               path: item.children.path,
-  //               pathLevel: item.children.path.length,
-  //               pathIndex: item.children.treeIndex,
-  //             },
-  //           });
-  //         });
-  //       }
-  //     }
-  //   });
-  // };
-
-
   handleSubmit = (e) => {
     e.preventDefault();
     this.props.form.validateFields({ force: true }, (err, values) => {
       if (err === null || !err) {
         const { dispatch } = this.props;
-        // 置换pointerCategory对象
-        const pointerCategory = {
+        // 置换pointerGroup对象
+        const pointerGroup = {
           __type: 'Pointer',
-          className: 'Category',
-          objectId: values.pointerCategory,
+          className: 'Group',
+          objectId: values.pointerGroup,
         };
 
         const { img } = this.state;
@@ -350,22 +292,19 @@ export default class Category extends React.PureComponent {
           }
 
           dispatch({
-            type: 'category/coverCategory',
+            type: 'group/coverGroup',
             payload: {
-              ...values, pointerCategory, pathLevel, thumb,
+              ...values, pointerGroup, pathLevel, thumb,
             },
-          }).then(() => {
-            const { relationSpec } = values;
-            this.handleSort();
           });
         } else {
           // 新建节点
           pathLevel = this.state.selectedPath.length;
 
           dispatch({
-            type: 'category/storeCategory',
+            type: 'group/storeGroup',
             payload: {
-              ...values, pointerCategory, pathLevel, thumb,
+              ...values, pointerGroup, pathLevel, thumb,
             },
           }).then(() => {
             this.handleSort();
@@ -401,8 +340,8 @@ export default class Category extends React.PureComponent {
         break;
       case 'delete':
         Modal.confirm({
-          title: '确认删除该分类吗？',
-          content: '确认删除将不可恢复；建议设置停用分类。',
+          title: '确认删除该分组吗？',
+          content: '确认删除将不可恢复；建议设置停用分组。',
           okText: '确定',
           cancelText: '取消',
           okType: 'danger',
@@ -439,14 +378,14 @@ export default class Category extends React.PureComponent {
     const { selectedNode } = this.state;
 
     dispatch({
-      type: 'category/coverCategory',
+      type: 'group/coverGroup',
       payload: {
         thumb: '',
         objectId: selectedNode.objectId,
       },
     }).then(() => {
       dispatch({
-        type: 'category/removeFile',
+        type: 'group/removeFile',
         payload: filename,
       });
     });
@@ -457,31 +396,15 @@ export default class Category extends React.PureComponent {
     if (!isJPG) {
       message.error('只能上传图片文件！');
     }
-    // const isLt2M = file.size / 1024 / 1024 < 2;
-    // if (!isLt2M) {
-    //   message.error('Image must smaller than 2MB!');
-    // }
-    const isLt2M = file.size / 1024 / 1024 < 1;
-    if (!isLt2M) {
+    const isLimit = file.size < globalConfig.imageLimit;
+    if (!isLimit) {
       message.error('图片大小必须小于1MB！');
     }
-    return isJPG && isLt2M;
+    return isJPG && isLimit;
   };
 
   handleImgCustomRequest = ({ onSuccess, onError, file }) => {
     const reader = new FileReader();
-
-    reader.onloadstart = () => {
-      // 这个事件在读取开始时触发
-    };
-
-    // reader.onprogress = (p) => {
-    //   // 这个事件在读取进行中定时触发
-    // };
-
-    reader.onload = () => {
-      // 这个事件在读取成功结束后触发
-    };
 
     reader.onloadend = () => {
       // 这个事件在读取结束后，无论成功或者失败都会触发
@@ -537,7 +460,7 @@ export default class Category extends React.PureComponent {
     if (selectedNode && selectedNode.thumb) {
       // 移除原有文件
       dispatch({
-        type: 'category/removeFile',
+        type: 'group/removeFile',
         payload: thumb,
       });
     }
@@ -559,27 +482,23 @@ export default class Category extends React.PureComponent {
 
   render() {
     const { getFieldDecorator } = this.props.form;
-    const { data } = this.props.category;
-    const categorys = this.Tree(data.results);
-    const categorysSelect = [{
-      label: '商品分类',
+    const groups = this.Tree(this.props.group.group.results);
+    const groupsSelect = [{
+      label: '商品分组',
       key: 'top',
       value: '',
-      children: categorys,
+      children: groups,
     }];
     const { editing, adding, selectedNode } = this.state;
-
-    const specData = this.props.spec.data;
-    const specs = this.Tree(specData.results, 'pointerSpec');
 
     // Img
     const { previewVisible, previewImage, fileList } = this.state.img;
 
-    let title = '编辑分类';
-    let category = {
+    let title = '编辑分组';
+    let group = {
       objectId: '',
       name: '',
-      pointerCategory: '',
+      pointerGroup: '',
       thumb: '',
       description: '',
       enabled: true,
@@ -588,45 +507,42 @@ export default class Category extends React.PureComponent {
 
     switch (adding) {
       case 'child':
-        category = {
+        group = {
           objectId: '',
           name: '',
-          pointerCategory: selectedNode ? selectedNode.objectId || '' : '',
+          pointerGroup: selectedNode ? selectedNode.objectId || '' : '',
           thumb: '',
           description: '',
           enabled: true,
-          relationSpec: [],
         };
-        title = '新建分类';
+        title = '新建分组';
         break;
       case 'brother':
-        category = {
+        group = {
           objectId: '',
           name: '',
-          pointerCategory: selectedNode && selectedNode.pointerCategory ? selectedNode.pointerCategory.objectId || '' : '',
+          pointerGroup: selectedNode && selectedNode.pointerGroup ? selectedNode.pointerGroup.objectId || '' : '',
           thumb: '',
           description: '',
           enabled: true,
-          relationSpec: [],
         };
-        title = '新建分类';
+        title = '新建分组';
         break;
       default:
-        category = {
+        group = {
           objectId: selectedNode ? selectedNode.objectId : '',
           name: selectedNode ? selectedNode.name : '',
-          pointerCategory: selectedNode && selectedNode.pointerCategory ? selectedNode.pointerCategory.objectId || '' : '',
+          pointerGroup: selectedNode && selectedNode.pointerGroup ? selectedNode.pointerGroup.objectId || '' : '',
           thumb: selectedNode ? selectedNode.thumb : '',
           description: selectedNode ? selectedNode.description : '',
           enabled: selectedNode ? selectedNode.enabled : true,
-          relationSpec: selectedNode ? selectedNode.relationSpec : [],
         };
         break;
     }
 
     const uploadButton = (
       <Tooltip
-        title="父分类图尺寸366 x 120，<br>子分类图尺寸48 x 48"
+        title="父分组图尺寸366 x 120，<br>子分组图尺寸48 x 48"
         placement="rightTop"
       >
         <div>
@@ -644,28 +560,24 @@ export default class Category extends React.PureComponent {
           onClick={e => this.handleAddBrotherNode(e, null)}
           icon="plus"
         >
-          新建分类
+          新建分组
         </Button>
       </div>
     );
 
     return (
       <PageHeaderLayout
-        title="分类管理"
+        title="分组管理"
         // logo={<img alt="" src="https://gw.alipayobjects.com/zos/rmsportal/nxkuOJlFJuAUhzlMTCEe.png" />}
-        // content="所有商品需归纳分类，提供分类信息的维护及管理。"
+        // content="所有商品需归纳分组，提供分组信息的维护及管理。"
       >
         <Row gutter={24}>
           <Col xl={12} lg={24} md={24} sm={24} xs={24}>
             <Row>
               <Card>
-                { categorys.length <= 0 ? newButton : '' }
+                { groups.length <= 0 ? newButton : '' }
                 <div style={{
                   height: 570,
-                  // overflow: 'scroll',
-                  // background: '#fff',
-                  // padding: 10,
-                  // margin: 10,
                 }}
                 >
                   <SortableTree
@@ -723,34 +635,34 @@ export default class Category extends React.PureComponent {
               <Form onSubmit={this.handleSubmit}>
                 <Form.Item>
                   {getFieldDecorator('objectId', {
-                    initialValue: category.objectId,
+                    initialValue: group.objectId,
                   })(
                     <Input hidden />
                   )}
                 </Form.Item>
-                <Form.Item label="父级分类" labelCol={{ span: 6 }} wrapperCol={{ span: 16 }} >
-                  {getFieldDecorator('pointerCategory', {
-                    initialValue: category.pointerCategory,
+                <Form.Item label="父级分组" labelCol={{ span: 6 }} wrapperCol={{ span: 16 }} >
+                  {getFieldDecorator('pointerGroup', {
+                    initialValue: group.pointerGroup,
                   })(
-                    <TreeSelect treeData={categorysSelect} placeholder="请选择父级分类" disabled />
+                    <TreeSelect treeData={groupsSelect} placeholder="请选择父级分组" disabled />
                   )}
                 </Form.Item>
                 <Divider dashed />
-                <Form.Item label="分类名称" labelCol={{ span: 6 }} wrapperCol={{ span: 16 }}>
+                <Form.Item label="分组名称" labelCol={{ span: 6 }} wrapperCol={{ span: 16 }}>
                   {getFieldDecorator('name', {
-                    initialValue: category.name,
+                    initialValue: group.name,
                   })(
-                    <Input placeholder="请输入分类名称" />
+                    <Input placeholder="请输入分组名称" />
                   )}
                 </Form.Item>
-                <Form.Item label="分类描述" labelCol={{ span: 6 }} wrapperCol={{ span: 16 }}>
+                <Form.Item label="分组描述" labelCol={{ span: 6 }} wrapperCol={{ span: 16 }}>
                   {getFieldDecorator('description', {
-                    initialValue: category.description,
+                    initialValue: group.description,
                   })(
                     <Input.TextArea autosize={{ minRows: 2, maxRows: 5 }} />
                   )}
                 </Form.Item>
-                <Form.Item label="分类图片" labelCol={{ span: 6 }} wrapperCol={{ span: 16 }}>
+                <Form.Item label="分组图片" labelCol={{ span: 6 }} wrapperCol={{ span: 16 }}>
                   <Upload
                     name="thumb"
                     accept="image/*"
@@ -766,7 +678,7 @@ export default class Category extends React.PureComponent {
                     onRemove={this.handleImgRemove}
                   >
                     {
-                      // category.thumb ? <img src={category.thumb} alt="" style={{ width: 80, height: 80 }} /> : uploadButton
+                      // group.thumb ? <img src={group.thumb} alt="" style={{ width: 80, height: 80 }} /> : uploadButton
                     }
                     {fileList && fileList.length >= 1 ? null : uploadButton}
                   </Upload>
@@ -777,26 +689,12 @@ export default class Category extends React.PureComponent {
                 <Form.Item label="状态" labelCol={{ span: 6 }} wrapperCol={{ span: 16 }}>
                   {getFieldDecorator('enabled', {
                     valuePropName: 'checked',
-                    initialValue: category.enabled,
+                    initialValue: group.enabled,
                   })(
                     <Switch checkedChildren="在用" unCheckedChildren="停用" />
                   )}
                 </Form.Item>
                 <Divider dashed />
-                <Form.Item label="分类规格" labelCol={{ span: 6 }} wrapperCol={{ span: 16 }} >
-                  {getFieldDecorator('relationSpec', {
-                    valuePropName: 'value',
-                    initialValue: category.relationSpec,
-                  })(
-                    <TreeSelect
-                      treeData={specs}
-                      treeCheckable={true}
-                      showCheckedStrategy={TreeSelect.SHOW_PARENT}
-                      placeholder="请选择分类规格"
-                      size="large"
-                    />
-                  )}
-                </Form.Item>
                 <Form.Item wrapperCol={{ span: 20, offset: 12 }}>
                   <Button type="default" htmlType="button" onClick={e => this.handleCancelEdit(e)} >取消</Button>
                   <Button type="primary" htmlType="submit" >保存</Button>

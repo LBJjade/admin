@@ -37,6 +37,11 @@ const menuData = [{
       path: 'category',
     },
     {
+      name: '分组管理',
+      icon: 'bars',
+      path: 'group',
+    },
+    {
       name: '规格模版',
       icon: 'profile',
       path: 'spec',

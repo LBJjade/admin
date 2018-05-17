@@ -94,6 +94,37 @@ export async function deleteCategorySpec(params) {
   });
 }
 
+// Group API
+export async function getGroup(params) {
+  const url = requestParams2Url(params);
+  return request(`/api/classes/Group${url}`, {
+    method: 'GET',
+  });
+}
+
+export async function postGroup(params) {
+  return request('/api/classes/Group', {
+    method: 'POST',
+    body: params,
+  });
+}
+
+export async function putGroup(params) {
+  const param = _.clone(params);
+  const { objectId } = param;
+  delete param.objectId;
+  return request(`/api/classes/Group/${objectId}`, {
+    method: 'PUT',
+    body: param,
+  });
+}
+
+export async function deleteGroup(params) {
+  return request(`/api/classes/Group/${params.objectId}`, {
+    method: 'DELETE',
+  });
+}
+
 // Goods API
 export async function getGoods(params) {
   const url = requestParams2Url(params);
@@ -101,3 +132,31 @@ export async function getGoods(params) {
     method: 'GET',
   });
 }
+
+export async function postGoods(params) {
+  return request('/api/classes/Goods', {
+    method: 'POST',
+    body: params,
+  });
+}
+
+export async function putGoods(params) {
+  const param = _.clone(params);
+  const { objectId } = param;
+  delete param.objectId;
+  return request(`/api/classes/Goods/${objectId}`, {
+    method: 'PUT',
+    body: param,
+  });
+}
+
+export async function deleteGoods(params) {
+  return request(`/api/classes/Goods/${params.objectId}`, {
+    method: 'DELETE',
+  });
+}
+
+
+
+
+

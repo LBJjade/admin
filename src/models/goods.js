@@ -1,5 +1,5 @@
 import { message } from 'antd';
-import { getGoods } from '../services/goods';
+import { getGoods, postGoods, putGoods, deleteGoods } from '../services/goods';
 
 export default {
   namespace: 'goods',
@@ -9,7 +9,10 @@ export default {
       results: [],
       count: 0,
     },
-    goods: {},
+    goods: {
+      results: [],
+      count: 0,
+    },
     goodsData: [
       {
         objectId: '0001',
@@ -156,13 +159,43 @@ export default {
   },
 
   effects: {
+    // goodses
     *fetchGoodses({ payload }, { call, put }) {
       const respon = yield call(getGoods, payload);
       yield put({ type: 'queryGoodses', payload: respon });
     },
+
+    // goods
     *fetchGoods({ payload }, { call, put }) {
       const respon = yield call(getGoods, payload);
       yield put({ type: 'queryGoods', payload: respon });
+    },
+    *storeGoods({ payload }, { call, put }) {
+      const res = yield call(postGoods, payload);
+      if (res.error) {
+        message.error(`保存失败！${res.error}`, 5);
+      } else {
+        yield put({ type: 'appendGoods', payload: { ...payload, ...res } });
+        message.success('保存成功！', 3);
+      }
+    },
+    *coverGoods({ payload }, { call, put }) {
+      const res = yield call(putGoods, payload);
+      if (res.error) {
+        message.error(`保存失败！${res.error}`, 5);
+      } else {
+        yield put({ type: 'resetGoods', payload: { ...payload, ...res } });
+        message.success('保存成功！', 3);
+      }
+    },
+    *removeGoods({ payload }, { call, put }) {
+      const res = yield call(deleteGoods, payload);
+      if (res.error) {
+        message.error(`删除失败！${res.error}`, 5);
+      } else {
+        yield put({ type: 'clearGoods', payload: { ...payload } });
+        message.success('删除成功！', 3);
+      }
     },
   },
 
@@ -173,11 +206,49 @@ export default {
         goodses: action.payload,
       };
     },
+
+    // Goods:
     queryGoods(state, action) {
       return {
         ...state,
-        goods: { ...action.payload.results },
+        goods: action.payload,
       };
     },
+
+    appendGoods(state, action) {
+      return ({
+        ...state,
+        goods: {
+          results: state.Goods.results.concat(action.payload),
+          count: state.data.count + 1,
+        },
+      });
+    },
+
+    resetGoods(state, action) {
+      return ({
+        ...state,
+        goods: {
+          results: state.goods.results.map((item) => {
+            if (item.objectId === action.payload.objectId) {
+              return { ...item, ...action.payload };
+            } else {
+              return item;
+            }
+          }),
+        },
+      });
+    },
+
+    clearGoods(state, action) {
+      return ({
+        ...state,
+        goods: {
+          results: state.goods.results.filter(item => item.objectId !== action.payload.objectId),
+          count: state.goods.count - 1,
+        },
+      });
+    },
+
   },
 };

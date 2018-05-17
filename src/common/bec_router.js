@@ -244,6 +244,9 @@ export const getRouterData = (app) => {
     '/goods/spec': {
       component: dynamicWrapper(app, ['spec'], () => import('../routes/Goods/Spec')),
     },
+    '/goods/group': {
+      component: dynamicWrapper(app, ['group'], () => import('../routes/Goods/Group')),
+    },
     '/goods/goodses': {
       component: dynamicWrapper(app, ['goods'], () => import('../routes/Goods/Goodses')),
     },

@@ -49,9 +49,10 @@ export default {
     *removeCategory({ payload }, { call, put }) {
       const res = yield call(deleteCategory, payload);
       if (res.error) {
-        message.error(`保存失败！${res.error}`, 5);
+        message.error(`删除失败！${res.error}`, 5);
       } else {
         yield put({ type: 'clearCategory', payload: { ...payload } });
+        message.success('删除成功！', 3);
       }
     },
 
