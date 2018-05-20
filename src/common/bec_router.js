@@ -193,11 +193,11 @@ export const getRouterData = (app) => {
     '/personal/setting': {
       component: dynamicWrapper(app, ['account'], () => import('../routes/Personal/Setting')),
     },
-    '/personal/information': {
-      component: dynamicWrapper(app, ['information'], () => import('../routes/Personal/Information')),
+    '/personal/Notices': {
+      component: dynamicWrapper(app, ['notices'], () => import('../routes/Personal/Notices')),
     },
     '/personal/detail/:id': {
-      component: dynamicWrapper(app, ['information'], () => import('../routes/Personal/Detail')),
+      component: dynamicWrapper(app, ['notices'], () => import('../routes/Personal/Detail')),
     },
     '/apps/bec/request_password_reset': {
       component: dynamicWrapper(app, ['forgetpassword'], () => import('../routes/Account/ForgetPassword/ReceivePasswordReset')),
@@ -214,8 +214,8 @@ export const getRouterData = (app) => {
     '/system/role': {
       component: dynamicWrapper(app, ['role'], () => import('../routes/System/Role')),
     },
-    '/system/auth': {
-      component: dynamicWrapper(app, ['user'], () => import('../routes/System/Auth')),
+    '/system/auth/:id': {
+      component: dynamicWrapper(app, ['user'], () => import('../routes/System/UserAuth')),
     },
     '/humanresources/employee': {
       component: dynamicWrapper(app, [], () => import('../routes/HumanResources/Employee')),

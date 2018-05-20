@@ -1,7 +1,7 @@
-import { getInformation, putInformation } from '../services/information';
+import { getInformation, putInformation } from '../services/notices';
 
 export default {
-  namespace: 'information',
+  namespace: 'notices',
 
   state: {
     data: {
@@ -39,7 +39,7 @@ export default {
         payload: response,
       });
     },
-    *fetchNew({ payload }, { call, put }) {
+    *fetchNews({ payload }, { call, put }) {
       const response = yield call(getInformation, payload);
       yield put({
         type: 'changeMessages',
