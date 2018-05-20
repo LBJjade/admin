@@ -1,6 +1,6 @@
 /* eslint-disable max-len */
 import React from 'react';
-import { Upload, Modal, Icon, message } from 'antd';
+import { Upload, Modal, Icon, message, Tooltip } from 'antd';
 import moment from 'moment';
 import styles from './index.less';
 import globalConfig from '../../config';
@@ -156,12 +156,18 @@ export default class UploadImage extends React.PureComponent {
     const { defaultFileList } = this.props;
     const { fileList } = this.props;
     const { limitFileCount } = this.props;
+    const { tooltip } = this.props;
 
     const uploadButton = (
-      <div>
-        <Icon type={this.state.loading ? 'loading' : 'plus'} />
-        <div className="ant-upload-text">Upload</div>
-      </div>
+      <Tooltip
+        title={tooltip}
+        placement="rightTop"
+      >
+        <div>
+          <Icon type={this.state.loading ? 'loading' : 'plus'} />
+          <div className="ant-upload-text">Upload</div>
+        </div>
+      </Tooltip>
     );
 
     return (
