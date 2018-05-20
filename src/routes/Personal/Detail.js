@@ -7,9 +7,9 @@ import PageHeaderLayout from '../../layouts/PageHeaderLayout';
 
 const { TextArea } = Input;
 
-@connect(({ information, loading }) => ({
-  information,
-  loading: loading.models.information,
+@connect(({ notices, loading }) => ({
+  notices,
+  loading: loading.models.notices,
 }))
 export default class BasicProfile extends Component {
   state = {
@@ -18,7 +18,7 @@ export default class BasicProfile extends Component {
   componentDidMount() {
     const { dispatch } = this.props;
     dispatch({
-      type: 'information/fetch',
+      type: 'notices/fetch',
       payload: {
         where: {
           objectId: this.props.match.params.id,
@@ -29,7 +29,7 @@ export default class BasicProfile extends Component {
         loading: false,
       });
       dispatch({
-        type: 'information/coverInformation',
+        type: 'notices/coverInformation',
         payload: {
           ojId: this.props.match.params.id,
           fields: {
@@ -41,7 +41,7 @@ export default class BasicProfile extends Component {
   }
 
   render() {
-    const { information: { data: { results } } } = this.props;
+    const { notices: { data: { results } } } = this.props;
     const vaule = results[0];
     const color = {
       todo: '',
@@ -92,7 +92,7 @@ export default class BasicProfile extends Component {
                 </div>
                 <div style={{ marginTop: 30 }}>
                   <Row>
-                    <Col span={12} offset={5}><Button type="primary" style={{ marginLeft: 8 }}><Link to="/personal/information">返回</Link></Button></Col>
+                    <Col span={12} offset={5}><Button type="primary" style={{ marginLeft: 8 }}><Link to="/personal/Notices">返回</Link></Button></Col>
                   </Row>
                 </div>
               </div>

@@ -286,7 +286,7 @@ export default class User extends PureComponent {
               dataSource={data.results}
               renderItem={item => (
                 <List.Item
-                  actions={[<Link to="/system/auth">认证</Link>, <MoreBtn />]}
+                  actions={[<Link to={`/system/auth/${item.objectId}`}>认证</Link>, <MoreBtn />]}
                 >
                   <List.Item.Meta
                     avatar={<Avatar src={item.avatar} shape="square" size="large" />}

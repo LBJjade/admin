@@ -1,4 +1,4 @@
-/* eslint-disable no-unused-vars,prefer-destructuring */
+/* eslint-disable no-unused-vars,prefer-destructuring,no-param-reassign */
 import { stringify } from 'qs';
 import _ from 'lodash';
 import request, { requestParams2Url } from '../utils/request';
@@ -6,6 +6,12 @@ import request, { requestParams2Url } from '../utils/request';
 
 export async function getUsers(params) {
   return request(`/api/users${requestParams2Url(params)}`, {
+    method: 'GET',
+  });
+}
+
+export async function getUser(params) {
+  return request(`/api/users?${stringify(params)}`, {
     method: 'GET',
   });
 }
@@ -56,6 +62,21 @@ export async function postRequestPasswordReset(params) {
 
 export async function getVerifyEmail(params) {
   return request(`/mail/verify_email${params}`, {
+    method: 'GET',
+  });
+}
+
+export async function postUserAuth(params) {
+  const tag = params.tags.join(',');
+  params.values.tags = tag;
+  return request('/api/classes/UserAuth', {
+    method: 'POST',
+    body: params.values,
+  });
+}
+
+export async function getAddress(params) {
+  return request(`/api/classes/Address?${stringify(params)}`, {
     method: 'GET',
   });
 }
