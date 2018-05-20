@@ -37,7 +37,6 @@ export default class Category extends React.PureComponent {
       fileList: [],
     },
     specData: [],
-    categoryspecData: [],
   };
 
   componentWillMount() {
@@ -354,9 +353,6 @@ export default class Category extends React.PureComponent {
             payload: {
               ...values, pointerCategory, pathLevel, thumb,
             },
-          }).then(() => {
-            const { relationSpec } = values;
-            this.handleSort();
           });
         } else {
           // 新建节点
@@ -583,7 +579,7 @@ export default class Category extends React.PureComponent {
       thumb: '',
       description: '',
       enabled: true,
-      relationSpec: [],
+      categorySpec: [],
     };
 
     switch (adding) {
@@ -595,7 +591,7 @@ export default class Category extends React.PureComponent {
           thumb: '',
           description: '',
           enabled: true,
-          relationSpec: [],
+          categorySpec: [],
         };
         title = '新建分类';
         break;
@@ -607,7 +603,7 @@ export default class Category extends React.PureComponent {
           thumb: '',
           description: '',
           enabled: true,
-          relationSpec: [],
+          categorySpec: [],
         };
         title = '新建分类';
         break;
@@ -619,7 +615,7 @@ export default class Category extends React.PureComponent {
           thumb: selectedNode ? selectedNode.thumb : '',
           description: selectedNode ? selectedNode.description : '',
           enabled: selectedNode ? selectedNode.enabled : true,
-          relationSpec: selectedNode ? selectedNode.relationSpec : [],
+          categorySpec: selectedNode ? selectedNode.categorySpec : [],
         };
         break;
     }
@@ -784,16 +780,18 @@ export default class Category extends React.PureComponent {
                 </Form.Item>
                 <Divider dashed />
                 <Form.Item label="分类规格" labelCol={{ span: 6 }} wrapperCol={{ span: 16 }} >
-                  {getFieldDecorator('relationSpec', {
+                  {getFieldDecorator('categorySpec', {
                     valuePropName: 'value',
-                    initialValue: category.relationSpec,
+                    initialValue: category.categorySpec,
                   })(
                     <TreeSelect
                       treeData={specs}
-                      treeCheckable={true}
-                      showCheckedStrategy={TreeSelect.SHOW_PARENT}
+                      treeCheckable
+                      allowClear
+                      // showCheckedStrategy={TreeSelect.SHOW_PARENT}
+                      showCheckedStrategy={TreeSelect.SHOW_CHILD}
+                      // showCheckedStrategy={TreeSelect.SHOW_ALL}
                       placeholder="请选择分类规格"
-                      size="large"
                     />
                   )}
                 </Form.Item>

@@ -156,7 +156,10 @@ export async function deleteGoods(params) {
   });
 }
 
-
-
-
-
+// GoodsImage API
+export async function getGoodsImage(params) {
+  const url = requestParams2Url(params);
+  return request(`/api/classes/GoodsImage${url}`, {
+    method: 'GET',
+  });
+}

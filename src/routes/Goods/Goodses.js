@@ -2,8 +2,9 @@ import React from 'react';
 import { connect } from 'dva';
 import { Link, routerRedux } from 'dva/router';
 import PropTypes from 'prop-types';
-import { Row, Icon } from 'antd';
+import { Row, Icon, Card } from 'antd';
 import PageHeaderLayout from '../../layouts/PageHeaderLayout';
+import HeaderSearch from '../../components/HeaderSearch';
 // import ImageCard from './Card/ImageCard';
 import GoodsCard from './Card/GoodsCard';
 import styles from './Goodses.less';
@@ -43,9 +44,12 @@ export default class Goodses extends React.Component {
       >
         <div>
           <Row>
-            <div align="right">
-              <Link className={styles.addgoods} to="/goods/goods"><Icon type="plus" /> 新增产品</Link>
-            </div>
+            <Card>
+              <div>
+                <HeaderSearch className={styles.search}>HeaderSearch</HeaderSearch>
+                <Link className={styles.addgoods} to="/goods/goods"><Icon type="plus" /> 新增商品</Link>
+              </div>
+            </Card>
           </Row>
           <Row>
             <GoodsCard
