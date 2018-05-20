@@ -2,6 +2,7 @@ import React from 'react';
 import { Card, Icon, Tag, List, Button } from 'antd';
 import styles from './GoodsCard.less';
 import globalConfig from '../../../config';
+import Ellipsis from '../../../components/Ellipsis';
 
 
 class GoodsCard extends React.PureComponent {
@@ -34,9 +35,7 @@ class GoodsCard extends React.PureComponent {
                     </div>
                     <div className={styles.card_content}>
                       <h4>¥{item.price}</h4>
-                      <div className={styles.card_content_title}>
-                        <p>{item.title}</p>
-                      </div>
+                      <Ellipsis lines={1}>{item.title}</Ellipsis>
                     </div>
                     <div className={styles.card_footer}>
                       <Tag color={item.categoryColor ? item.categoryColor : 'gold'}>分类</Tag>

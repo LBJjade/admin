@@ -1,5 +1,5 @@
 import { message } from 'antd';
-import { getGoods, postGoods, putGoods, deleteGoods } from '../services/goods';
+import { getGoods, postGoods, putGoods, deleteGoods, getGoodsImage } from '../services/goods';
 
 export default {
   namespace: 'goods',
@@ -9,10 +9,7 @@ export default {
       results: [],
       count: 0,
     },
-    goods: {
-      results: [],
-      count: 0,
-    },
+
     goodsData: [
       {
         objectId: '0001',
@@ -197,6 +194,13 @@ export default {
         message.success('删除成功！', 3);
       }
     },
+
+    // goodsImage
+    * fetchGoodsImage({ payload }, { call, put }) {
+      const respon = yield call(getGoodsImage, payload);
+      yield put({ type: 'queryGoodsImage', payload: respon });
+    },
+
   },
 
   reducers: {
@@ -214,7 +218,6 @@ export default {
         goods: action.payload,
       };
     },
-
     appendGoods(state, action) {
       return ({
         ...state,
@@ -224,7 +227,6 @@ export default {
         },
       });
     },
-
     resetGoods(state, action) {
       return ({
         ...state,
@@ -239,7 +241,6 @@ export default {
         },
       });
     },
-
     clearGoods(state, action) {
       return ({
         ...state,
@@ -250,5 +251,12 @@ export default {
       });
     },
 
+    // GoodsImage
+    queryGoodsImage(state, action) {
+      return {
+        ...state,
+        goodsImage: action.payload,
+      };
+    },
   },
 };
