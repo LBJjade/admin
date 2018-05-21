@@ -139,7 +139,7 @@ export default class Goods extends React.PureComponent {
   };
 
   handleCategoryChange = (value) => {
-    const category = this.props.category.data.results.find(i => i.objectId === value);
+    const category = this.props.category.category.results.find(i => i.objectId === value);
     if (category.categorySpec) {
       this.setState({
         pointerCategory: value,
@@ -148,7 +148,7 @@ export default class Goods extends React.PureComponent {
       this.handleGoodsSpecChange(category.categorySpec);
     } else {
       if (category.pointerCategory) {
-        const categoryParent = this.props.category.data.results.find(i => i.objectId === category.pointerCategory.objectId);
+        const categoryParent = this.props.category.category.results.find(i => i.objectId === category.pointerCategory.objectId);
         if (categoryParent && categoryParent.categorySpec) {
           this.setState({
             pointerCategory: value,
@@ -178,7 +178,7 @@ export default class Goods extends React.PureComponent {
     const values = value.toString();
 
     // 过滤选择规格
-    const specs = this.props.spec.data.results;
+    const specs = this.props.spec.spec.results;
     const specChild = specs.filter(i => values.indexOf(i.objectId) >= 0);
 
     // 获取父级规格
@@ -244,7 +244,7 @@ export default class Goods extends React.PureComponent {
     this.props.form.resetFields();
   };
 
-  handleSubmit = (e) => {
+  handleOK = (e) => {
     e.preventDefault();
     const { validateFields } = this.props.form;
     validateFields({ force: true }, (err, values) => {
@@ -306,8 +306,8 @@ export default class Goods extends React.PureComponent {
     const { getFieldDecorator } = this.props.form;
     const { goods, adding, editing } = this.state;
 
-    const categorys = this.Tree(this.props.category.data.results, 'pointerCategory');
-    const specs = this.Tree(this.props.spec.data.results, 'pointerSpec');
+    const categorys = this.Tree(this.props.category.category.results, 'pointerCategory');
+    const specs = this.Tree(this.props.spec.spec.results, 'pointerSpec');
     const { pointerCategory } = this.state;
     const { categorySpec } = this.state;
     let { specColumns } = this.state;
@@ -392,7 +392,7 @@ export default class Goods extends React.PureComponent {
       <div>
         <PageHeaderLayout>
           <div className={styles.goods}>
-            <Form onSubmit={this.handleSubmit} load>
+            <Form load>
               <Card>
                 <Form.Item>
                   {getFieldDecorator('objectId', {
@@ -484,7 +484,7 @@ export default class Goods extends React.PureComponent {
                   {...formItemLayout}
                   label="上架/下架"
                 >
-                  {getFieldDecorator('status', {
+                  {getFieldDecorator('onSale', {
                     valuePropName: 'checked',
                     initialValue: goods ? goods.status : false,
                     rules: [
@@ -672,7 +672,7 @@ export default class Goods extends React.PureComponent {
         </PageHeaderLayout>
         <FooterToolbar>
           <Button type="default" htmlType="button" onClick={e => this.handleCancelEdit(e)} >取消</Button>
-          <Button type="primary" htmlType="submit" >保存</Button>
+          <Button type="primary" htmlType="button" onClick={e => this.handleSubmit(e)} >保存</Button>
         </FooterToolbar>
       </div>
     );

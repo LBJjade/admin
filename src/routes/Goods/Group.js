@@ -265,7 +265,7 @@ export default class Group extends React.PureComponent {
     });
   };
 
-  handleSubmit = (e) => {
+  handleOK = (e) => {
     e.preventDefault();
     this.props.form.validateFields({ force: true }, (err, values) => {
       if (err === null || !err) {
@@ -642,7 +642,7 @@ export default class Group extends React.PureComponent {
               className={styles.card}
               hidden={!editing}
             >
-              <Form onSubmit={this.handleSubmit}>
+              <Form>
                 <Form.Item>
                   {getFieldDecorator('objectId', {
                     initialValue: group.objectId,
@@ -703,7 +703,7 @@ export default class Group extends React.PureComponent {
                 <Divider dashed />
                 <Form.Item wrapperCol={{ span: 20, offset: 12 }}>
                   <Button type="default" htmlType="button" onClick={e => this.handleCancelEdit(e)} >取消</Button>
-                  <Button type="primary" htmlType="submit" >保存</Button>
+                  <Button type="primary" htmlType="button" onClick={e => this.handleOK(e)} >保存</Button>
                 </Form.Item>
               </Form>
             </Card>
