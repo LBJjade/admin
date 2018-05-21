@@ -7,7 +7,7 @@ export default {
 
   state: {
     loading: false,
-    data: {
+    category: {
       results: [],
       count: 0,
     },
@@ -74,7 +74,7 @@ export default {
     changeCategory(state, action) {
       return {
         ...state,
-        data: action.payload,
+        category: action.payload,
       };
     },
     changeCategorySpec(state, action) {
@@ -86,17 +86,17 @@ export default {
     appendCategory(state, action) {
       return ({
         ...state,
-        data: {
-          results: state.data.results.concat(action.payload).sort(),
-          count: state.data.count + 1,
+        category: {
+          results: state.category.results.concat(action.payload).sort(),
+          count: state.category.count + 1,
         },
       });
     },
     resetCategory(state, action) {
       return ({
         ...state,
-        data: {
-          results: state.data.results.map((item) => {
+        category: {
+          results: state.category.results.map((item) => {
             if (item.objectId === action.payload.objectId) {
               return { ...item, ...action.payload };
             } else {
@@ -109,9 +109,9 @@ export default {
     clearCategory(state, action) {
       return ({
         ...state,
-        data: {
-          results: state.data.results.filter(item => item.objectId !== action.payload.objectId),
-          count: state.data.count - 1,
+        category: {
+          results: state.category.results.filter(item => item.objectId !== action.payload.objectId),
+          count: state.category.count - 1,
         },
       });
     },

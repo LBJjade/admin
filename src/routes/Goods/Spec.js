@@ -1,8 +1,9 @@
 /* eslint-disable max-len */
 import React from 'react';
 import { connect } from 'dva';
-import { Card, Row, Col, Form, Input, Icon, message, Button, TreeSelect, Divider, Dropdown, Menu, Modal, Affix } from 'antd';
-import SortableTree, { getFlatDataFromTree } from 'react-sortable-tree';
+import { Card, Row, Col, Form, Input, Upload, Icon, message, Button, TreeSelect, Switch, Divider, Dropdown, Menu, Modal, Affix, Tooltip } from 'antd';
+import moment from 'moment';
+import SortableTree from 'react-sortable-tree';
 import 'react-sortable-tree/style.css';
 import PageHeaderLayout from '../../layouts/PageHeaderLayout';
 import styles from './Spec.less';
@@ -23,7 +24,7 @@ export default class Spec extends React.PureComponent {
     adding: '',
   };
 
-  componentDidMount() {
+  componentWillMount() {
     const { dispatch } = this.props;
     dispatch({
       type: 'spec/fetchSpec',
@@ -35,12 +36,13 @@ export default class Spec extends React.PureComponent {
   }
 
   componentWillReceiveProps(nextProps) {
-    if (nextProps.spec.data) {
-      this.setState({ treeData: this.Tree(nextProps.spec.data.results) });
+    if (nextProps.spec.spec) {
+      const data = nextProps.spec.spec.results.sort((a, b) => (a.pathIndex > b.pathIndex ? 1 : -1))
+      this.setState({ treeData: this.Tree(data) });
     }
   }
 
-  Tree = (data) => {
+  Tree = (data, parentKey = 'pointerSpec') => {
     const val = [];
     if (data) {
       // 删除 所有 children,以防止多次调用；加入key、value、label
@@ -48,10 +50,10 @@ export default class Spec extends React.PureComponent {
         item.title = item.name;
         item.subtitle = (item.description ? (<span className={styles.subtitle}>{item.description}</span>) : '');
         item.label = item.name;
-        item.id = item.pathIndex || `-${item.objectId}`;
-        item.key = item.pathIndex || `-${item.objectId}`;
+        item.id = item.objectId;
+        item.key = item.objectId;
         item.value = item.objectId;
-        item.expanded = true;
+        // item.expanded = true;
 
         delete item.children;
       });
@@ -64,9 +66,10 @@ export default class Spec extends React.PureComponent {
 
       data.forEach((item) => {
         // 以当前遍历项的parentId,去map对象中找到索引的objectId
-        const parent = map[item.pointerSpec ? item.pointerSpec.objectId : undefined];
+        const parent = map[item[parentKey] ? item[parentKey].objectId : undefined];
         // 如果找到索引，那么说明此项不在顶级当中,那么需要把此项添加到，他对应的父级中
         if (parent) {
+          item.key = `${parent.key}-${item.key}`;
           (parent.children || (parent.children = [])).push(item);
         } else {
           // 如果没有在map中找到对应的索引objectId,那么直接把 当前的item添加到 val结果集中，作为顶级
@@ -75,12 +78,6 @@ export default class Spec extends React.PureComponent {
       });
     }
     return val;
-  };
-
-  handleChangeNode = (treeData) => {
-    this.setState({
-      treeData,
-    });
   };
 
   handleClickNode = (e, rowInfo) => {
@@ -95,10 +92,11 @@ export default class Spec extends React.PureComponent {
 
   handleAddChildNode = (e, rowInfo) => {
     if (!this.state.editing) {
-      if (rowInfo.path.length >= globalConfig.categoryPathLimit) {
+      if (rowInfo.path.length >= globalConfig.specPathLimit) {
         message.warn(`只支持${globalConfig.specPathLimit}级规格信息，禁止再新建子级！`);
         return;
       }
+
       this.setState({
         selectedNode: rowInfo.node,
         selectedPath: rowInfo.path,
@@ -136,6 +134,7 @@ export default class Spec extends React.PureComponent {
   handleRemoveNode = (e, rowInfo) => {
     // Todo
     const deleteNode = rowInfo.node;
+
     if (deleteNode.children) {
       message.warn('此规格存在子规格，禁止删除！', 5);
     } else {
@@ -145,8 +144,16 @@ export default class Spec extends React.PureComponent {
         payload: {
           objectId: deleteNode.objectId,
         },
+      }).then(() => {
+        this.handleSort();
       });
     }
+  };
+
+  handleChangeNode = (treeData) => {
+    this.setState({
+      treeData,
+    });
   };
 
   // Called after node move operation.
@@ -154,8 +161,11 @@ export default class Spec extends React.PureComponent {
   handleMoveNode = (data) => {
     const { node, nextParentNode } = data;
     const { dispatch } = this.props;
-    if (node.pointerSpec && nextParentNode && node.pointerSpec.objectId !== nextParentNode.objectId) {
-      // 父节点不同，更新父节点
+    const parentObjectId = node.pointerSpec ? node.pointerSpec.objectId || '' : '';
+    const nextParentObjectId = nextParentNode ? nextParentNode.objectId || '' : '';
+
+    // 父节点不同，更新父节点
+    if (parentObjectId !== nextParentObjectId) {
       dispatch({
         type: 'spec/coverSpec',
         payload: {
@@ -163,17 +173,54 @@ export default class Spec extends React.PureComponent {
           pointerSpec: {
             __type: 'Pointer',
             className: 'Spec',
-            objectId: nextParentNode ? nextParentNode.objectId : '',
+            objectId: nextParentObjectId,
           },
         },
       });
     }
   };
 
+  handleSort = () => {
+    const { dispatch } = this.props;
+    const { treeData } = this.state;
+
+    let level = 1;
+    let sort = 0;
+    treeData.forEach((item) => {
+      level = 1;
+
+      dispatch({
+        type: 'spec/coverSpec',
+        payload: {
+          objectId: item.objectId,
+          pathLevel: level,
+          pathIndex: sort,
+        },
+      });
+      sort += 1;
+
+      if (item.children) {
+        level = 2;
+        item.children.forEach((child) => {
+          dispatch({
+            type: 'spec/coverSpec',
+            payload: {
+              objectId: child.objectId,
+              pathLevel: level,
+              pathIndex: sort,
+            },
+          });
+          sort += 1;
+        });
+      }
+    });
+  };
+
   handleSubmit = (e) => {
     e.preventDefault();
     this.props.form.validateFields({ force: true }, (err, values) => {
       if (err === null || !err) {
+        const { dispatch } = this.props;
         // 置换pointerSpec对象
         const pointerSpec = {
           __type: 'Pointer',
@@ -192,19 +239,17 @@ export default class Spec extends React.PureComponent {
             pathLevel = this.state.selectedPath.length;
           }
 
-          this.props.dispatch({
+          dispatch({
             type: 'spec/coverSpec',
             payload: {
               ...values, pointerSpec, pathLevel,
             },
-          }).then(() => {
-            this.handleSort();
           });
         } else {
           // 新建节点
           pathLevel = this.state.selectedPath.length;
 
-          this.props.dispatch({
+          dispatch({
             type: 'spec/storeSpec',
             payload: {
               ...values, pointerSpec, pathLevel,
@@ -244,6 +289,7 @@ export default class Spec extends React.PureComponent {
       case 'delete':
         Modal.confirm({
           title: '确认删除该规格吗？',
+          content: '确认删除将不可恢复；建议设置停用规格。',
           okText: '确定',
           cancelText: '取消',
           okType: 'danger',
@@ -257,33 +303,11 @@ export default class Spec extends React.PureComponent {
     }
   };
 
-  handleSort = (force = false) => {
-    getFlatDataFromTree({
-      treeData: this.state.treeData,
-      getKey: node => node.objectId,
-      getParentKey: node => node.pointerSpec.objectId,
-      getNodeKey: ({ treeIndex }) => treeIndex,
-    }).forEach((item) => {
-      if (force || item.node.pathIndex === undefined || item.treeIndex !== item.node.pathIndex || item.node.path === undefined || item.path.toString() !== item.node.path.toString()) {
-        this.props.dispatch({
-          type: 'spec/coverSpec',
-          payload: {
-            objectId: item.node.objectId,
-            path: item.path,
-            pathLevel: item.path.length,
-            pathIndex: item.treeIndex,
-          },
-        });
-      }
-    });
-  };
-
   render() {
     const { getFieldDecorator } = this.props.form;
-    const { data } = this.props.spec;
-    const specs = this.Tree(data.results);
+    const specs = this.Tree(this.props.spec.spec.results);
     const specsSelect = [{
-      label: '规格模版',
+      label: '顶级规格',
       key: 'top',
       value: '',
       children: specs,
@@ -295,6 +319,8 @@ export default class Spec extends React.PureComponent {
       objectId: '',
       name: '',
       pointerSpec: '',
+      description: '',
+      enabled: true,
     };
 
     switch (adding) {
@@ -303,6 +329,8 @@ export default class Spec extends React.PureComponent {
           objectId: '',
           name: '',
           pointerSpec: selectedNode ? selectedNode.objectId || '' : '',
+          description: '',
+          enabled: true,
         };
         title = '新建规格';
         break;
@@ -311,6 +339,8 @@ export default class Spec extends React.PureComponent {
           objectId: '',
           name: '',
           pointerSpec: selectedNode && selectedNode.pointerSpec ? selectedNode.pointerSpec.objectId || '' : '',
+          description: '',
+          enabled: true,
         };
         title = '新建规格';
         break;
@@ -319,6 +349,8 @@ export default class Spec extends React.PureComponent {
           objectId: selectedNode ? selectedNode.objectId : '',
           name: selectedNode ? selectedNode.name : '',
           pointerSpec: selectedNode && selectedNode.pointerSpec ? selectedNode.pointerSpec.objectId || '' : '',
+          description: selectedNode ? selectedNode.description : '',
+          enabled: selectedNode ? selectedNode.enabled : true,
         };
         break;
     }
@@ -338,7 +370,8 @@ export default class Spec extends React.PureComponent {
 
     return (
       <PageHeaderLayout
-        title="规格模版管理"
+        title="类目规格"
+        content="对商城所有商品进行统一类目规格定义，针对商品可提供多规格的支持。"
       >
         <Row gutter={24}>
           <Col xl={12} lg={24} md={24} sm={24} xs={24}>
@@ -347,10 +380,6 @@ export default class Spec extends React.PureComponent {
                 { specs.length <= 0 ? newButton : '' }
                 <div style={{
                   height: 570,
-                  // overflow: 'scroll',
-                  // background: '#fff',
-                  // padding: 10,
-                  // margin: 10,
                 }}
                 >
                   <SortableTree
@@ -362,7 +391,6 @@ export default class Spec extends React.PureComponent {
                         onClick: event => this.handleClickNode(event, rowInfo),
                         buttons: [
                           <Dropdown
-                            // trigger={['click']}
                             overlay={(
                               <Menu onClick={menu => this.handleClickMenu(menu, rowInfo)}>
                                 <Menu.Item key="edit">
@@ -381,7 +409,6 @@ export default class Spec extends React.PureComponent {
                                 </Menu.Item>
                               </Menu>)}
                           >
-
                             <Icon type="ellipsis" style={{ margin: 8, cursor: 'pointer' }} />
                           </Dropdown>,
                         ],
@@ -395,7 +422,7 @@ export default class Spec extends React.PureComponent {
             <Row>
               <div style={{ margin: 10 }}>
                 <Affix offsetBottom={0}>
-                  <Button type="primary" icon="bars" onClick={() => this.handleSort(true)}>更新排序</Button>
+                  <Button type="primary" icon="bars" onClick={() => this.handleSort()}>更新排序</Button>
                 </Affix>
               </div>
             </Row>
@@ -429,6 +456,22 @@ export default class Spec extends React.PureComponent {
                     <Input placeholder="请输入规格名称" />
                   )}
                 </Form.Item>
+                <Form.Item label="规格描述" labelCol={{ span: 6 }} wrapperCol={{ span: 16 }}>
+                  {getFieldDecorator('description', {
+                    initialValue: spec.description,
+                  })(
+                    <Input.TextArea autosize={{ minRows: 2, maxRows: 5 }} />
+                  )}
+                </Form.Item>
+                <Form.Item label="状态" labelCol={{ span: 6 }} wrapperCol={{ span: 16 }}>
+                  {getFieldDecorator('enabled', {
+                    valuePropName: 'checked',
+                    initialValue: spec.enabled,
+                  })(
+                    <Switch checkedChildren="在用" unCheckedChildren="停用" />
+                  )}
+                </Form.Item>
+                <Divider dashed />
                 <Form.Item wrapperCol={{ span: 20, offset: 12 }}>
                   <Button type="default" htmlType="button" onClick={e => this.handleCancelEdit(e)} >取消</Button>
                   <Button type="primary" htmlType="submit" >保存</Button>

@@ -31,7 +31,7 @@ class GoodsCard extends React.PureComponent {
                     onClick={e => this.handleClick(e, item)}
                   >
                     <div className={styles.card_header}>
-                      <img className={styles.card_img} src={`${globalConfig.imageUrl}${item.thumb}`} alt="" />
+                      <img className={styles.card_img} src={`${globalConfig.imageUrl}${item.thumb.substr(item.thumb.indexOf('/') + 1)}`} alt="" />
                     </div>
                     <div className={styles.card_content}>
                       <h4>¥{item.price}</h4>

@@ -50,8 +50,12 @@ class EditableTable extends React.PureComponent {
   remove = (recorde) => {
     const newData = this.state.data.filter(item => item.key !== recorde.key);
     this.setState({ data: newData });
-    this.props.onRemoveRow(newData, recorde);
-    this.props.onChange(newData);
+    if (this.props.onRemoveRow) {
+      this.props.onRemoveRow(newData, recorde);
+    }
+    if (this.props.onChange) {
+      this.props.onChange(newData);
+    }
   };
 
   handleKeyPress = (e, recode) => {

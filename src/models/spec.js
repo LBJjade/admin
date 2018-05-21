@@ -7,7 +7,7 @@ export default {
 
   state: {
     loading: false,
-    data: {
+    spec: {
       results: [],
       count: 0,
     },
@@ -61,23 +61,23 @@ export default {
     changeSpec(state, action) {
       return {
         ...state,
-        data: action.payload,
+        spec: action.payload,
       };
     },
     appendSpec(state, action) {
       return ({
         ...state,
-        data: {
-          results: state.data.results.concat(action.payload).sort(),
-          count: state.data.count + 1,
+        spec: {
+          results: state.spec.results.concat(action.payload).sort(),
+          count: state.spec.count + 1,
         },
       });
     },
     resetSpec(state, action) {
       return ({
         ...state,
-        data: {
-          results: state.data.results.map((item) => {
+        spec: {
+          results: state.spec.results.map((item) => {
             if (item.objectId === action.payload.objectId) {
               return { ...item, ...action.payload };
             } else {
@@ -90,9 +90,9 @@ export default {
     clearSpec(state, action) {
       return ({
         ...state,
-        data: {
-          results: state.data.results.filter(item => item.objectId !== action.payload.objectId),
-          count: state.data.count - 1,
+        spec: {
+          results: state.spec.results.filter(item => item.objectId !== action.payload.objectId),
+          count: state.spec.count - 1,
         },
       });
     },

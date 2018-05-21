@@ -1,8 +1,7 @@
-/* eslint-disable max-len */
 import React from 'react';
 import { connect } from 'dva';
 import { Route, Redirect } from 'dva/router';
-import { Row, Col, Card, Input, Icon, InputNumber, Switch, Button, Form, Upload, Modal, TreeSelect, Radio, Checkbox, Tabs, Table } from 'antd';
+import { Row, Col, Card, Input, Icon, InputNumber, Switch, Button, Form, Upload, Modal, TreeSelect, Radio, Checkbox, Tabs, Table, Select } from 'antd';
 import { EditorState, convertToRaw, ContentState } from 'draft-js';
 import { Editor } from 'react-draft-wysiwyg';
 import 'react-draft-wysiwyg/dist/react-draft-wysiwyg.css';
@@ -12,7 +11,6 @@ import styles from './Goods.less';
 import globalConfig from '../../config';
 import EditableTable from '../../components/EditableTable';
 import UploadImage from '../../components/UploadImage';
-import EditableTag from '../../components/EditableTag';
 
 const { TextArea } = Input;
 const RadioGroup = Radio.Group;
@@ -312,8 +310,6 @@ export default class Goods extends React.PureComponent {
     const specs = this.Tree(this.props.spec.data.results, 'pointerSpec');
     const { pointerCategory } = this.state;
     const { categorySpec } = this.state;
-    const { specChild } = this.state;
-    const { specParent } = this.state;
     let { specColumns } = this.state;
     let { specDataSource } = this.state;
 
@@ -336,13 +332,6 @@ export default class Goods extends React.PureComponent {
       thumbUrl: `${globalConfig.imageUrl}card-3.jpeg`,
     }];
 
-    const uploadButton = (
-      <div style={{ width: '110px', height: '110px' }}>
-        <Icon type="plus" />
-        <div className="ant-upload-text">Upload</div>
-      </div>
-    );
-
     const formItemLayout = {
       labelCol: {
         xs: { span: 24 },
@@ -353,16 +342,6 @@ export default class Goods extends React.PureComponent {
         sm: { span: 16 },
       },
     };
-    const formItemLayoutS = {
-      labelCol: {
-        xs: { span: 24 },
-        sm: { span: 6 },
-      },
-      wrapperCol: {
-        xs: { span: 24 },
-        sm: { span: 6 },
-      },
-    };
     const formItemLayoutM = {
       labelCol: {
         xs: { span: 24 },
@@ -371,13 +350,6 @@ export default class Goods extends React.PureComponent {
       wrapperCol: {
         xs: { span: 24 },
         sm: { span: 10 },
-      },
-    };
-
-    const formLayoutSubmit = {
-      wrapperCol: {
-        xs: { span: 24, offset: 0 },
-        sm: { span: 10, offset: 6 },
       },
     };
 
@@ -409,6 +381,12 @@ export default class Goods extends React.PureComponent {
     if (specDataSource) {
       specDataSource = specDataSource.map(i => ({ ...i, price: 0, stock: 1, barCode: '' }));
     }
+
+    const keyword = ['我们', '五月的阳光'];
+    // for (let i = 10; i < 36; i++) {
+    //   keyword.push(<Select.Option key={i.toString(36) + i}>{i.toString(36) + i}</Select.Option>);
+    // }
+    const keywordOption = keyword.map(i => (<Select.Option key={i}>{i}</Select.Option>));
 
     return (
       <div>
@@ -490,6 +468,20 @@ export default class Goods extends React.PureComponent {
                 </Form.Item>
                 <Form.Item
                   {...formItemLayout}
+                  label="是否包邮"
+                >
+                  {getFieldDecorator('isSendFree', {
+                    valuePropName: 'checked',
+                    initialValue: goods ? goods.isSendFree : 0,
+                    rules: [
+                      { required: false, message: '请选择是否包邮配送！' },
+                    ],
+                  })(
+                    <Checkbox>包邮</Checkbox>
+                  )}
+                </Form.Item>
+                <Form.Item
+                  {...formItemLayout}
                   label="上架/下架"
                 >
                   {getFieldDecorator('status', {
@@ -538,7 +530,7 @@ export default class Goods extends React.PureComponent {
                   {...formItemLayout}
                   label="零库存"
                 >
-                  {getFieldDecorator('zeroCnf', {
+                  {getFieldDecorator('zeroStockCnf', {
                     initialValue: goods ? goods.zeroCnf : 1,
                     rules: [
                       { required: false, message: '选择零库存影响上下架方式！' },
@@ -549,59 +541,6 @@ export default class Goods extends React.PureComponent {
                       <Radio value={0}>零库存不改变上下架状态</Radio>
                     </RadioGroup>
                   )}
-                </Form.Item>
-                <Form.Item
-                  {...formItemLayout}
-                  label="商品推广"
-                >
-                  {getFieldDecorator('isRecommand', {
-                    valuePropName: 'checked',
-                    initialValue: goods ? goods.isRecommand : 0,
-                    rules: [
-                      { required: false, message: '请选择商品属性！' },
-                    ],
-                  })(
-                    <Checkbox>推荐首页</Checkbox>
-                  )}
-                </Form.Item>
-                <Form.Item
-                  {...formItemLayout}
-                  label="关键字"
-                >
-                  {getFieldDecorator('keyword', {
-                    valuePropName: 'value',
-                    initialValue: goods ? goods.keyword : '',
-                    rules: [
-                      { required: false, message: '请输入商品关键字！' },
-                    ],
-                  })(
-                    <EditableTag />
-                  )}
-                </Form.Item>
-                <Form.Item
-                  {...formItemLayout}
-                  label="商品描述"
-                >
-                  <TextArea rows={3} />
-                </Form.Item>
-                <Form.Item
-                  {...formItemLayout}
-                  label="详细描述"
-                >
-                  <Editor
-                    // https://jpuri.github.io/react-draft-wysiwyg/#/docs
-                    localization={{ locale: 'zh' }}
-                    editorState={editorState}
-                    // toolbarClassName="toolbarClassName"
-                    // wrapperClassName="wrapperClassName"
-                    // editorClassName="editorClassName"
-                    // wrapperClassName="wysiwyg-wrapper"
-                    toolbar={{
-                      options: ['inline', 'blockType', 'fontSize', 'fontFamily', 'list', 'textAlign', 'colorPicker', 'link', 'embedded', 'emoji', 'image', 'remove', 'history'],
-                    }}
-                    onEditorStateChange={this.handleChange}
-                    editorStyle={{ height: 360, border: 1, borderStyle: 'solid', borderColor: '#ccc' }}
-                  />
                 </Form.Item>
                 <Form.Item
                   {...formItemLayout}
@@ -616,7 +555,7 @@ export default class Goods extends React.PureComponent {
                     <TreeSelect
                       treeData={categorys}
                       placeholder="请选择商品分类"
-                      onChange={(value) => this.handleCategoryChange(value)}
+                      onChange={value => this.handleCategoryChange(value)}
                     />
                   )}
                 </Form.Item>
@@ -658,11 +597,74 @@ export default class Goods extends React.PureComponent {
                   })(
                     <TreeSelect
                       treeData={groups}
-                      treeCheckable={true}
-                      showCheckedStrategy={TreeSelect.SHOW_PARENT}
+                      treeCheckable
+                      showCheckedStrategy={TreeSelect.SHOW_ALL}
                       placeholder="请选择商品分组"
                     />
                   )}
+                </Form.Item>
+                <Form.Item
+                  {...formItemLayout}
+                  label="商品推广"
+                >
+                  {getFieldDecorator('isRecommand', {
+                    valuePropName: 'checked',
+                    initialValue: goods ? goods.isRecommand : 0,
+                    rules: [
+                      { required: false, message: '请选择商品属性！' },
+                    ],
+                  })(
+                    <Checkbox>推荐首页</Checkbox>
+                  )}
+                </Form.Item>
+                <Form.Item
+                  {...formItemLayout}
+                  label="关键字"
+                >
+                  {getFieldDecorator('keyword', {
+                    initialValue: goods ? goods.keyword : keyword,
+                    rules: [
+                      { required: false, message: '请输入商品关键字！' },
+                    ],
+                  })(
+                    <Select
+                      mode="tags"
+                      style={{ width: '100%' }}
+                      tokenSeparators={[',']}
+                      tags
+                      placeholder="输入该商品的一些关键字，便于快速查找到该商品信息；回车键输入多个。"
+                    >
+                      {keywordOption}
+                    </Select>
+                  )}
+                </Form.Item>
+                <Form.Item
+                  {...formItemLayout}
+                  label="商品描述"
+                >
+                  <TextArea
+                    rows={3}
+                    placeholder="请输入商品描述；该商品描述在一些商品显示页中作为副标题显示。"
+                  />
+                </Form.Item>
+                <Form.Item
+                  {...formItemLayout}
+                  label="详细描述"
+                >
+                  <Editor
+                    // https://jpuri.github.io/react-draft-wysiwyg/#/docs
+                    localization={{ locale: 'zh' }}
+                    editorState={editorState}
+                    // toolbarClassName="toolbarClassName"
+                    // wrapperClassName="wrapperClassName"
+                    // editorClassName="editorClassName"
+                    // wrapperClassName="wysiwyg-wrapper"
+                    toolbar={{
+                      options: ['inline', 'blockType', 'fontSize', 'fontFamily', 'list', 'textAlign', 'colorPicker', 'link', 'embedded', 'emoji', 'image', 'remove', 'history'],
+                    }}
+                    onEditorStateChange={this.handleChange}
+                    editorStyle={{ height: 360, border: 1, borderStyle: 'solid', borderColor: '#ccc' }}
+                  />
                 </Form.Item>
               </Card>
             </Form>

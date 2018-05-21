@@ -21,7 +21,7 @@ export default class Goodses extends React.Component {
       type: 'goods/fetchGoodses',
       payload: {
         count: true,
-        limit: 6,
+        limit: 9,
         skip: 0,
       },
     });
