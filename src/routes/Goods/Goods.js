@@ -139,42 +139,50 @@ export default class Goods extends React.PureComponent {
   };
 
   handleCategoryChange = (value) => {
+    // 重新初始化
+    this.props.form.resetFields(['goodsSpec', 'multSku', 'goodsSpec', 'goodsSku']);
+
+    this.setState({
+      pointerCategory: value,
+    });
+
+    // 选取类目规格规格：优先本类目规格，再父级类目规格
     const category = this.props.category.category.results.find(i => i.objectId === value);
-    if (category.categorySpec) {
+
+    if (category.categorySpec && category.categorySpec.length) {
       this.setState({
-        pointerCategory: value,
         categorySpec: category.categorySpec,
       });
       this.handleGoodsSpecChange(category.categorySpec);
-    } else {
-      if (category.pointerCategory) {
-        const categoryParent = this.props.category.category.results.find(i => i.objectId === category.pointerCategory.objectId);
-        if (categoryParent && categoryParent.categorySpec) {
-          this.setState({
-            pointerCategory: value,
-            categorySpec: categoryParent.categorySpec,
-          });
-          this.handleGoodsSpecChange(categoryParent.categorySpec);
-        } else {
-          this.setState({
-            pointerCategory: value,
-            categorySpec: [],
-          });
-          this.handleGoodsSpecChange([]);
-        }
-      } else {
+      return;
+    }
+
+    if (category && category.pointerCategory) {
+      const categoryParent = this.props.category.category.results.find(i => i.objectId === category.pointerCategory.objectId);
+      if (categoryParent && categoryParent.categorySpec) {
         this.setState({
-          pointerCategory: value,
-          categorySpec: [],
+          categorySpec: categoryParent.categorySpec,
         });
-        this.handleGoodsSpecChange([]);
+        this.handleGoodsSpecChange(categoryParent.categorySpec);
+        return;
       }
     }
 
-    this.props.form.resetFields();
+    this.setState({
+      categorySpec: [],
+    });
+  };
+
+  handleMultSkuChange = (e) => {
+    this.props.form.resetFields(['goodsSpec', 'goodsSku']);
+    this.setState({
+      multSku: e.target.checked,
+    });
   };
 
   handleGoodsSpecChange = (value) => {
+    this.props.form.setFields('goodsSku');
+
     const values = value.toString();
 
     // 过滤选择规格
@@ -235,13 +243,9 @@ export default class Goods extends React.PureComponent {
     }
 
     this.setState({
-      specChild,
-      specParent,
       specColumns,
       specDataSource,
     });
-
-    this.props.form.resetFields();
   };
 
   handleOK = (e) => {
@@ -249,55 +253,38 @@ export default class Goods extends React.PureComponent {
     const { validateFields } = this.props.form;
     validateFields({ force: true }, (err, values) => {
       if (err === null || !err) {
+        let goods = values;
         const { dispatch } = this.props;
 
-        const pointerCategory = {
+        goods.onSale = goods.onSale ? 1 : 0;
+        goods.isSendFree = goods.isSendFree ? 1 : 0;
+
+        goods.pointerCategory = {
           __type: 'Pointer',
           className: 'Category',
-          objectId: values.pointerCategory,
+          objectId: goods.pointerCategory,
         };
 
-        const { img } = this.state;
-        const thumb = img.fileList.length ? img.fileList[0].name || '' : '';
+        goods.isRecommand = goods.isRecommand ? 1 : 0;
 
-        let pathLevel = this.state.selectedPath.length;
+        goods.multSku = goods.multSku ? 1 : 0;
 
-        // 修改节点
-        if (values.objectId) {
-          if (this.state.adding === 'child') {
-            pathLevel = this.state.selectedPath.length + 1;
-          }
-          if (this.state.adding === 'brother') {
-            pathLevel = this.state.selectedPath.length;
-          }
-
-          dispatch({
-            type: 'category/coverCategory',
-            payload: {
-              ...values, pointerCategory, pathLevel, thumb,
-            },
-          }).then(() => {
-            const { relationSpec } = values;
-            this.handleSort();
-          });
-        } else {
-          // 新建节点
-          pathLevel = this.state.selectedPath.length;
-
-          dispatch({
-            type: 'category/storeCategory',
-            payload: {
-              ...values, pointerCategory, pathLevel, thumb,
-            },
-          }).then(() => {
-            this.handleSort();
-          });
+        if (values.keyword) {
+          goods.keyword = values.keyword.toString();
         }
 
-        this.setState({
-          editing: false,
-          adding: '',
-        });
+        console.log(goods);
+
+        // 修改商品
+        if (values.objectId) {
+          console.log(goods);
+        } else {
+          // 添加商品
+          dispatch({
+            type: 'goods/storeGoods',
+            payload: goods,
+          });
+        }
       }
     });
   };
@@ -308,29 +295,35 @@ export default class Goods extends React.PureComponent {
 
     const categorys = this.Tree(this.props.category.category.results, 'pointerCategory');
     const specs = this.Tree(this.props.spec.spec.results, 'pointerSpec');
-    const { pointerCategory } = this.state;
-    const { categorySpec } = this.state;
+    const { pointerCategory, multSku } = this.state;
+
+    let { categorySpec } = this.state;
+    if (!multSku) {
+      categorySpec = [];
+    }
+
     let { specColumns } = this.state;
     let { specDataSource } = this.state;
 
     const groups = this.Tree(this.props.group.group.results, 'pointerGroup');
 
-    const fileList = [{
-      uid: 'file0001',
-      name: 'card-1.jpeg',
-      status: 'done',
-      thumbUrl: `${globalConfig.imageUrl}card-1.jpeg`,
-    }, {
-      uid: 'file0002',
-      name: 'card-2.jpeg',
-      status: 'done',
-      thumbUrl: `${globalConfig.imageUrl}card-2.jpeg`,
-    }, {
-      uid: 'file0003',
-      name: 'card-3.jpeg',
-      status: 'done',
-      thumbUrl: `${globalConfig.imageUrl}card-3.jpeg`,
-    }];
+    // const fileList = [{
+    //   uid: 'file0001',
+    //   name: 'card-1.jpeg',
+    //   status: 'done',
+    //   thumbUrl: `${globalConfig.imageUrl}card-1.jpeg`,
+    // }, {
+    //   uid: 'file0002',
+    //   name: 'card-2.jpeg',
+    //   status: 'done',
+    //   thumbUrl: `${globalConfig.imageUrl}card-2.jpeg`,
+    // }, {
+    //   uid: 'file0003',
+    //   name: 'card-3.jpeg',
+    //   status: 'done',
+    //   thumbUrl: `${globalConfig.imageUrl}card-3.jpeg`,
+    // }];
+    const fileList = [];
 
     const formItemLayout = {
       labelCol: {
@@ -374,18 +367,15 @@ export default class Goods extends React.PureComponent {
       },
     ];
 
-    if (specColumns) {
+    if (specColumns && specColumns.length) {
       specColumns = specColumns.concat(specColumnsExtra);
     }
 
-    if (specDataSource) {
+    if (specDataSource && specDataSource.length) {
       specDataSource = specDataSource.map(i => ({ ...i, price: 0, stock: 1, barCode: '' }));
     }
 
-    const keyword = ['我们', '五月的阳光'];
-    // for (let i = 10; i < 36; i++) {
-    //   keyword.push(<Select.Option key={i.toString(36) + i}>{i.toString(36) + i}</Select.Option>);
-    // }
+    const keyword = goods && goods.keyword ? goods.keyword.split(',') : [];
     const keywordOption = keyword.map(i => (<Select.Option key={i}>{i}</Select.Option>));
 
     return (
@@ -421,7 +411,23 @@ export default class Goods extends React.PureComponent {
                       { required: true, message: '请输入商品标题！' },
                     ],
                   })(
-                    <Input placeholder="给商品起一个通俗易懂的标题..." />
+                    <Input placeholder="给商品起一个通俗易懂的标题，该标题将在商城的商品标题显示..." />
+                  )}
+                </Form.Item>
+                <Form.Item
+                  {...formItemLayout}
+                  label="商品描述"
+                >
+                  {getFieldDecorator('description', {
+                    initialValue: goods ? goods.description : '',
+                    rules: [
+                      { required: false, message: '请输入商品描述！' },
+                    ],
+                  })(
+                    <TextArea
+                      rows={2}
+                      placeholder="请输入商品描述；该商品描述在商城的一些商品显示页中作为副标题显示。"
+                    />
                   )}
                 </Form.Item>
                 <Form.Item
@@ -472,7 +478,7 @@ export default class Goods extends React.PureComponent {
                 >
                   {getFieldDecorator('isSendFree', {
                     valuePropName: 'checked',
-                    initialValue: goods ? goods.isSendFree : 0,
+                    initialValue: goods && goods.isSendFree ? goods.isSendFree : 0,
                     rules: [
                       { required: false, message: '请选择是否包邮配送！' },
                     ],
@@ -486,7 +492,7 @@ export default class Goods extends React.PureComponent {
                 >
                   {getFieldDecorator('onSale', {
                     valuePropName: 'checked',
-                    initialValue: goods ? goods.status : false,
+                    initialValue: goods && goods.onSale ? goods.onSale : 0,
                     rules: [
                       { required: true, message: '请输入商品单价！' },
                     ],
@@ -498,8 +504,8 @@ export default class Goods extends React.PureComponent {
                   {...formItemLayout}
                   label="实物/虚拟"
                 >
-                  {getFieldDecorator('isVirtual', {
-                    initialValue: goods ? goods.isVirtual : 0,
+                  {getFieldDecorator('goodsType', {
+                    initialValue: goods ? goods.goodsType : 0,
                     rules: [
                       { required: false, message: '请选择是否虚拟商品！' },
                     ],
@@ -514,8 +520,8 @@ export default class Goods extends React.PureComponent {
                   {...formItemLayout}
                   label="减库存方式"
                 >
-                  {getFieldDecorator('totalCnf', {
-                    initialValue: goods ? goods.totalCnf : 1,
+                  {getFieldDecorator('stockCnf', {
+                    initialValue: goods ? goods.stockCnf : 1,
                     rules: [
                       { required: false, message: '请选择减库存方式！' },
                     ],
@@ -530,8 +536,8 @@ export default class Goods extends React.PureComponent {
                   {...formItemLayout}
                   label="零库存"
                 >
-                  {getFieldDecorator('zeroStockCnf', {
-                    initialValue: goods ? goods.zeroCnf : 1,
+                  {getFieldDecorator('zeroStock', {
+                    initialValue: goods ? goods.zeroStock : 1,
                     rules: [
                       { required: false, message: '选择零库存影响上下架方式！' },
                     ],
@@ -561,14 +567,28 @@ export default class Goods extends React.PureComponent {
                 </Form.Item>
                 <Form.Item
                   {...formItemLayout}
+                  label="商品多规格"
+                >
+                  {getFieldDecorator('multSku', {
+                    valuePropName: 'checked',
+                    initialValue: goods && goods.multSku ? goods.multSku : 0,
+                    rules: [
+                      { required: false, message: '请选择商品是否多规格！' },
+                    ],
+                  })(
+                    <Checkbox onChange={e => this.handleMultSkuChange(e)} >是否多规格</Checkbox>
+                  )}
+                </Form.Item>
+                <Form.Item
+                  {...formItemLayout}
                   label="商品规格"
                 >
-                  {getFieldDecorator('GoodsSpec', {
+                  {getFieldDecorator('goodsSpec', {
                     valuePropName: 'value',
-                    initialValue: categorySpec,
+                    initialValue: this.state.multSku ? this.state.categorySpec : [],
                   })(
                     <TreeSelect
-                      treeData={specs}
+                      treeData={this.state.multSku ? specs : []}
                       treeCheckable
                       showCheckedStrategy={TreeSelect.SHOW_CHILD}
                       placeholder="请选择商品规格"
@@ -580,20 +600,25 @@ export default class Goods extends React.PureComponent {
                   {...formItemLayout}
                   label="规格单价库存"
                 >
-                  <EditableTable
-                    size="small"
-                    columns={specColumns}
-                    dataSource={specDataSource}
-                    pagination={false}
-                  />
+                  {getFieldDecorator('goodsSku', {
+                    valuePropName: 'dataSource',
+                    initialValue: this.state.multSku ? specDataSource : [],
+                  })(
+                    <EditableTable
+                      size="small"
+                      columns={this.state.multSku ? specColumns : []}
+                      // dataSource={this.state.multSku ? specDataSource : []}
+                      pagination={false}
+                    />
+                  )}
                 </Form.Item>
                 <Form.Item
                   {...formItemLayout}
                   label="商品分组"
                 >
-                  {getFieldDecorator('relationGroup', {
+                  {getFieldDecorator('goodsGroup', {
                     valuePropName: 'value',
-                    initialValue: goods && goods.relationGroup ? goods.relationGroup : [],
+                    initialValue: goods && goods.goodsGroup ? goods.goodsGroup : [],
                   })(
                     <TreeSelect
                       treeData={groups}
@@ -609,7 +634,7 @@ export default class Goods extends React.PureComponent {
                 >
                   {getFieldDecorator('isRecommand', {
                     valuePropName: 'checked',
-                    initialValue: goods ? goods.isRecommand : 0,
+                    initialValue: goods && goods.isRecommand ? goods.isRecommand : 0,
                     rules: [
                       { required: false, message: '请选择商品属性！' },
                     ],
@@ -640,15 +665,6 @@ export default class Goods extends React.PureComponent {
                 </Form.Item>
                 <Form.Item
                   {...formItemLayout}
-                  label="商品描述"
-                >
-                  <TextArea
-                    rows={3}
-                    placeholder="请输入商品描述；该商品描述在一些商品显示页中作为副标题显示。"
-                  />
-                </Form.Item>
-                <Form.Item
-                  {...formItemLayout}
                   label="详细描述"
                 >
                   <Editor
@@ -672,7 +688,7 @@ export default class Goods extends React.PureComponent {
         </PageHeaderLayout>
         <FooterToolbar>
           <Button type="default" htmlType="button" onClick={e => this.handleCancelEdit(e)} >取消</Button>
-          <Button type="primary" htmlType="button" onClick={e => this.handleSubmit(e)} >保存</Button>
+          <Button type="primary" htmlType="button" onClick={e => this.handleOK(e)} >保存</Button>
         </FooterToolbar>
       </div>
     );

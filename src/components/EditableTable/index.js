@@ -190,7 +190,7 @@ class EditableTable extends React.PureComponent {
       },
     ];
 
-    if (columns) {
+    if (columns && columns.length) {
       columns = columns.concat(columnAction);
     }
 
@@ -205,6 +205,7 @@ class EditableTable extends React.PureComponent {
           rowClassName={(record) => {
             return record.editable ? styles.editable : '';
           }}
+          onChange={this.props.onChange}
         />
       </div>
     );
