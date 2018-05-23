@@ -15,11 +15,16 @@ import UploadImage from '../../components/UploadImage';
 const { TextArea } = Input;
 const RadioGroup = Radio.Group;
 
-@connect(({ goods, category, group, spec }) => ({ goods, category, group, spec }))
+@connect(({ goods, loading, category, group, spec }) => ({
+  goods,
+  loading: loading.models.goods,
+  category,
+  group,
+  spec,
+}))
 @Form.create()
 export default class Goods extends React.PureComponent {
   state = {
-    goods: undefined,
     pointerCategory: '',
     categorySpec: [],
     adding: false,
@@ -28,15 +33,19 @@ export default class Goods extends React.PureComponent {
   };
 
   componentDidMount() {
-    // const { dispatch } = this.props;
-    // dispatch({
-    //   type: 'goods/fetchGoods',
-    //   payload: {
-    //     count: true,
-    //   },
-    // });
+    const { dispatch, location } = this.props;
+    const { state } = location;
 
-    const { dispatch } = this.props;
+    if (state && state.objectId) {
+      const { objectId } = state;
+      dispatch({
+        type: 'goods/fetchGoods',
+        payload: {
+          objectId,
+        },
+      });
+    }
+
     dispatch({
       type: 'category/fetchCategory',
       payload: {
@@ -59,42 +68,34 @@ export default class Goods extends React.PureComponent {
     });
   }
 
-  componentWillReceiveProps(nextProps) {
-    const { params } = nextProps.match;
-    const { dispatch } = this.props;
-
-    if (nextProps.goods.goods) {
-      const goods = nextProps.goods.goods.results;
-      if (goods && goods.length) {
-        this.setState({ goods: { ...goods[0] } });
-      } else {
-        this.setState({ goods: undefined });
-      }
-    }
-
-    if (!this.state.params && params.objectId) {
-      this.setState({ params });
-      dispatch({
-        type: 'goods/fetchGoods',
-        payload: {
-          where: params,
-        },
-      });
-
-      dispatch({
-        type: 'goods/fetchGoodsImage',
-        payload: {
-          where: {
-            pointerGoods: {
-              __type: 'Pointer',
-              className: 'Goods',
-              objectId: params.objectId,
-            },
-          },
-        },
-      });
-    }
-  }
+  // componentWillReceiveProps(nextProps) {
+  //   console.log(nextProps);
+  //   const { params } = nextProps.match;
+  //   const { dispatch } = this.props;
+  //
+  //   if (!this.state.params && params.objectId) {
+  //     this.setState({ params });
+  //     dispatch({
+  //       type: 'goods/fetchGoods',
+  //       payload: {
+  //         where: params,
+  //       },
+  //     });
+  //
+  //     dispatch({
+  //       type: 'goods/fetchGoodsImage',
+  //       payload: {
+  //         where: {
+  //           pointerGoods: {
+  //             __type: 'Pointer',
+  //             className: 'Goods',
+  //             objectId: params.objectId,
+  //           },
+  //         },
+  //       },
+  //     });
+  //   }
+  // }
 
   Tree = (data, parentKey = 'pointerCategory') => {
     const val = [];
@@ -181,7 +182,6 @@ export default class Goods extends React.PureComponent {
   };
 
   handleGoodsSpecChange = (value) => {
-    this.props.form.setFields('goodsSku');
 
     const values = value.toString();
 
@@ -259,6 +259,12 @@ export default class Goods extends React.PureComponent {
         goods.onSale = goods.onSale ? 1 : 0;
         goods.isSendFree = goods.isSendFree ? 1 : 0;
 
+        const tmp = [];
+        goods.goodsGroup.forEach((item) => {
+          tmp.push(item.value);
+        });
+        goods.goodsGroup = tmp;
+
         goods.pointerCategory = {
           __type: 'Pointer',
           className: 'Category',
@@ -267,17 +273,20 @@ export default class Goods extends React.PureComponent {
 
         goods.isRecommand = goods.isRecommand ? 1 : 0;
 
+        goods.isNew = goods.isNew ? 1 : 0;
+
         goods.multSku = goods.multSku ? 1 : 0;
 
         if (values.keyword) {
           goods.keyword = values.keyword.toString();
         }
 
-        console.log(goods);
-
         // 修改商品
         if (values.objectId) {
-          console.log(goods);
+          dispatch({
+            type: 'goods/coverGoods',
+            payload: goods,
+          });
         } else {
           // 添加商品
           dispatch({
@@ -290,12 +299,13 @@ export default class Goods extends React.PureComponent {
   };
 
   render() {
-    const { getFieldDecorator } = this.props.form;
-    const { goods, adding, editing } = this.state;
+    const { form, loading } = this.props;
+    const { getFieldDecorator } = form;
+    const { goods } = this.props.goods;
+    const { adding, editing, pointerCategory, multSku } = this.state;
 
     const categorys = this.Tree(this.props.category.category.results, 'pointerCategory');
     const specs = this.Tree(this.props.spec.spec.results, 'pointerSpec');
-    const { pointerCategory, multSku } = this.state;
 
     let { categorySpec } = this.state;
     if (!multSku) {
@@ -305,7 +315,27 @@ export default class Goods extends React.PureComponent {
     let { specColumns } = this.state;
     let { specDataSource } = this.state;
 
-    const groups = this.Tree(this.props.group.group.results, 'pointerGroup');
+    // const groups = this.Tree(this.props.group.group.results, 'pointerGroup');
+    const groups = this.props.group.group.results.map(item => {
+      item.label = item.name;
+      item.value = item.objectId;
+      if (item.pointerGroup && item.pointerGroup.objectId.length > 0) {
+        item.parentGroup = item.pointerGroup.objectId;
+      } else {
+        item.parentGroup = null;
+      }
+      return item;
+    });
+    const goodsGroup = [];
+    if (goods && goods.goodsGroup) {
+      goods.goodsGroup.forEach((item) => {
+        goodsGroup.push({
+          value: item,
+          label: '',
+        });
+      });
+    }
+
 
     // const fileList = [{
     //   uid: 'file0001',
@@ -324,27 +354,6 @@ export default class Goods extends React.PureComponent {
     //   thumbUrl: `${globalConfig.imageUrl}card-3.jpeg`,
     // }];
     const fileList = [];
-
-    const formItemLayout = {
-      labelCol: {
-        xs: { span: 24 },
-        sm: { span: 6 },
-      },
-      wrapperCol: {
-        xs: { span: 24 },
-        sm: { span: 16 },
-      },
-    };
-    const formItemLayoutM = {
-      labelCol: {
-        xs: { span: 24 },
-        sm: { span: 6 },
-      },
-      wrapperCol: {
-        xs: { span: 24 },
-        sm: { span: 10 },
-      },
-    };
 
     const { editorState } = this.state;
 
@@ -375,18 +384,63 @@ export default class Goods extends React.PureComponent {
       specDataSource = specDataSource.map(i => ({ ...i, price: 0, stock: 1, barCode: '' }));
     }
 
-    const keyword = goods && goods.keyword ? goods.keyword.split(',') : [];
-    const keywordOption = keyword.map(i => (<Select.Option key={i}>{i}</Select.Option>));
+    let keyword = goods && goods.keyword ? goods.keyword || '' : '';
+    // keyword 兼容老数据
+    // 全局逗号置换空格
+    // 全局多空格置换单空格
+    // 去除首尾空格
+    // 全局空格置换逗号
+    keyword = keyword.replace(/,/g, ' ');
+    keyword = keyword.replace(/\s+/g, ' ');
+    keyword = keyword.trim();
+    keyword = keyword.replace(/\s+/g, ',');
+    keyword = keyword.length > 0 ? keyword.split(',') : [];
+    // const keywordOption = keyword.map(i => (<Select.Option key={i}>{i}</Select.Option>));
+
+
+    const formItemLayout = {
+      labelCol: {
+        xs: { span: 24 },
+        sm: { span: 6 },
+      },
+      wrapperCol: {
+        xs: { span: 24 },
+        sm: { span: 16 },
+      },
+    };
+
+    const formItemLayoutNolabel = {
+      wrapperCol: {
+        xs: { span: 24, offset: 0 },
+        sm: { span: 16, offset: 6 },
+      },
+    };
+
+    const formItemLayoutM = {
+      labelCol: {
+        xs: { span: 24 },
+        sm: { span: 6 },
+      },
+      wrapperCol: {
+        xs: { span: 24 },
+        sm: { span: 10 },
+      },
+    };
+
+    const formItemLayoutMult = {
+      xs: { span: 24 },
+      sm: { span: 6 },
+    };
 
     return (
       <div>
         <PageHeaderLayout>
           <div className={styles.goods}>
-            <Form load>
+            <Form>
               <Card>
                 <Form.Item>
                   {getFieldDecorator('objectId', {
-                    initialValue: goods ? goods.objectId : '',
+                    initialValue: goods ? goods.objectId || '' : '',
                   })(
                     <Input hidden />
                   )}
@@ -406,7 +460,7 @@ export default class Goods extends React.PureComponent {
                   label="商品标题"
                 >
                   {getFieldDecorator('title', {
-                    initialValue: goods ? goods.title : '',
+                    initialValue: goods ? goods.title || '' : '',
                     rules: [
                       { required: true, message: '请输入商品标题！' },
                     ],
@@ -419,7 +473,7 @@ export default class Goods extends React.PureComponent {
                   label="商品描述"
                 >
                   {getFieldDecorator('description', {
-                    initialValue: goods ? goods.description : '',
+                    initialValue: goods ? goods.description || '' : '',
                     rules: [
                       { required: false, message: '请输入商品描述！' },
                     ],
@@ -435,9 +489,9 @@ export default class Goods extends React.PureComponent {
                   label="商品名称"
                 >
                   {getFieldDecorator('goodsName', {
-                    initialValue: goods ? goods.goodsName : '',
+                    initialValue: goods ? goods.goodsName || '' : '',
                     rules: [
-                      { required: true, message: '请输入商品名称！' },
+                      { required: false, message: '请输入商品名称！' },
                     ],
                   })(
                     <Input placeholder="行业标准的商品名称..." />
@@ -448,9 +502,9 @@ export default class Goods extends React.PureComponent {
                   label="商品编号"
                 >
                   {getFieldDecorator('goodsSn', {
-                    initialValue: goods ? goods.goodsSn : '',
+                    initialValue: goods ? goods.goodsSn || '' : '',
                     rules: [
-                      { required: true, message: '请输入商品编号！' },
+                      { required: false, message: '请输入商品编号！' },
                     ],
                   })(
                     <Input placeholder="行业标准的商品编号..." />
@@ -461,7 +515,7 @@ export default class Goods extends React.PureComponent {
                   label="单价"
                 >
                   {getFieldDecorator('price', {
-                    initialValue: goods ? goods.price : 0,
+                    initialValue: goods ? goods.price || 0 : 0,
                     rules: [
                       { required: true, message: '请输入商品单价！' },
                     ],
@@ -478,7 +532,7 @@ export default class Goods extends React.PureComponent {
                 >
                   {getFieldDecorator('isSendFree', {
                     valuePropName: 'checked',
-                    initialValue: goods && goods.isSendFree ? goods.isSendFree : 0,
+                    initialValue: goods && goods.isSendFree > 0,
                     rules: [
                       { required: false, message: '请选择是否包邮配送！' },
                     ],
@@ -492,7 +546,7 @@ export default class Goods extends React.PureComponent {
                 >
                   {getFieldDecorator('onSale', {
                     valuePropName: 'checked',
-                    initialValue: goods && goods.onSale ? goods.onSale : 0,
+                    initialValue: goods && goods.onSale > 0,
                     rules: [
                       { required: true, message: '请输入商品单价！' },
                     ],
@@ -505,7 +559,7 @@ export default class Goods extends React.PureComponent {
                   label="实物/虚拟"
                 >
                   {getFieldDecorator('goodsType', {
-                    initialValue: goods ? goods.goodsType : 0,
+                    initialValue: goods ? goods.goodsType || 0 : 0,
                     rules: [
                       { required: false, message: '请选择是否虚拟商品！' },
                     ],
@@ -521,7 +575,7 @@ export default class Goods extends React.PureComponent {
                   label="减库存方式"
                 >
                   {getFieldDecorator('stockCnf', {
-                    initialValue: goods ? goods.stockCnf : 1,
+                    initialValue: goods ? goods.stockCnf || 1 : 1,
                     rules: [
                       { required: false, message: '请选择减库存方式！' },
                     ],
@@ -537,7 +591,7 @@ export default class Goods extends React.PureComponent {
                   label="零库存"
                 >
                   {getFieldDecorator('zeroStock', {
-                    initialValue: goods ? goods.zeroStock : 1,
+                    initialValue: goods ? goods.zeroStock || 1 : 1,
                     rules: [
                       { required: false, message: '选择零库存影响上下架方式！' },
                     ],
@@ -552,15 +606,32 @@ export default class Goods extends React.PureComponent {
                   {...formItemLayout}
                   label="商品分类"
                 >
+                  {getFieldDecorator('goodsGroup', {
+                    initialValue: goodsGroup,
+                  })(
+                    <TreeSelect
+                      treeData={groups}
+                      treeCheckable
+                      showCheckedStrategy={TreeSelect.SHOW_ALL}
+                      treeCheckStrictly
+                      treeDataSimpleMode={{ id: 'objectId', pId: 'parentGroup', rootPId: null }}
+                      placeholder="请选择商品分类"
+                    />
+                  )}
+                </Form.Item>
+                <Form.Item
+                  {...formItemLayout}
+                  label="商品类目"
+                >
                   {getFieldDecorator('pointerCategory', {
-                    initialValue: pointerCategory,
+                    initialValue: goods && goods.pointerCategory ? goods.pointerCategory.objectId || '' : '',
                     rules: [
-                      { required: true, message: '请输入商品分类！' },
+                      { required: false, message: '请输入商品类目！' },
                     ],
                   })(
                     <TreeSelect
                       treeData={categorys}
-                      placeholder="请选择商品分类"
+                      placeholder="请选择商品类目"
                       onChange={value => this.handleCategoryChange(value)}
                     />
                   )}
@@ -571,7 +642,7 @@ export default class Goods extends React.PureComponent {
                 >
                   {getFieldDecorator('multSku', {
                     valuePropName: 'checked',
-                    initialValue: goods && goods.multSku ? goods.multSku : 0,
+                    initialValue: goods && goods.multSku > 0,
                     rules: [
                       { required: false, message: '请选择商品是否多规格！' },
                     ],
@@ -584,8 +655,10 @@ export default class Goods extends React.PureComponent {
                   label="商品规格"
                 >
                   {getFieldDecorator('goodsSpec', {
-                    valuePropName: 'value',
-                    initialValue: this.state.multSku ? this.state.categorySpec : [],
+                    initialValue: goods && goods.goodsSpec ? goods.goodsSpec : [],
+                    rules: [
+                      { required: false, message: '请选择商品规格！' },
+                    ],
                   })(
                     <TreeSelect
                       treeData={this.state.multSku ? specs : []}
@@ -607,39 +680,35 @@ export default class Goods extends React.PureComponent {
                     <EditableTable
                       size="small"
                       columns={this.state.multSku ? specColumns : []}
-                      // dataSource={this.state.multSku ? specDataSource : []}
                       pagination={false}
                     />
                   )}
                 </Form.Item>
                 <Form.Item
                   {...formItemLayout}
-                  label="商品分组"
-                >
-                  {getFieldDecorator('goodsGroup', {
-                    valuePropName: 'value',
-                    initialValue: goods && goods.goodsGroup ? goods.goodsGroup : [],
-                  })(
-                    <TreeSelect
-                      treeData={groups}
-                      treeCheckable
-                      showCheckedStrategy={TreeSelect.SHOW_ALL}
-                      placeholder="请选择商品分组"
-                    />
-                  )}
-                </Form.Item>
-                <Form.Item
-                  {...formItemLayout}
-                  label="商品推广"
+                  label="推广栏目"
                 >
                   {getFieldDecorator('isRecommand', {
                     valuePropName: 'checked',
-                    initialValue: goods && goods.isRecommand ? goods.isRecommand : 0,
+                    initialValue: goods && goods.isRecommand > 0,
                     rules: [
-                      { required: false, message: '请选择商品属性！' },
+                      { required: false, message: '是否人气推荐！' },
                     ],
                   })(
-                    <Checkbox>推荐首页</Checkbox>
+                    <Checkbox>人气推荐</Checkbox>
+                  )}
+                </Form.Item>
+                <Form.Item
+                  {...formItemLayoutNolabel}
+                >
+                  {getFieldDecorator('isNew', {
+                    valuePropName: 'checked',
+                    initialValue: goods && goods.isNew > 0,
+                    rules: [
+                      { required: false, message: '是否新品首发！' },
+                    ],
+                  })(
+                    <Checkbox>新品首发</Checkbox>
                   )}
                 </Form.Item>
                 <Form.Item
@@ -647,7 +716,7 @@ export default class Goods extends React.PureComponent {
                   label="关键字"
                 >
                   {getFieldDecorator('keyword', {
-                    initialValue: goods ? goods.keyword : keyword,
+                    initialValue: keyword,
                     rules: [
                       { required: false, message: '请输入商品关键字！' },
                     ],
@@ -658,9 +727,7 @@ export default class Goods extends React.PureComponent {
                       tokenSeparators={[',']}
                       tags
                       placeholder="输入该商品的一些关键字，便于快速查找到该商品信息；回车键输入多个。"
-                    >
-                      {keywordOption}
-                    </Select>
+                    />
                   )}
                 </Form.Item>
                 <Form.Item
@@ -688,7 +755,7 @@ export default class Goods extends React.PureComponent {
         </PageHeaderLayout>
         <FooterToolbar>
           <Button type="default" htmlType="button" onClick={e => this.handleCancelEdit(e)} >取消</Button>
-          <Button type="primary" htmlType="button" onClick={e => this.handleOK(e)} >保存</Button>
+          <Button type="primary" htmlType="button" onClick={e => this.handleOK(e)} loading={loading} >保存</Button>
         </FooterToolbar>
       </div>
     );

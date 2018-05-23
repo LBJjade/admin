@@ -126,9 +126,15 @@ export async function deleteGroup(params) {
 }
 
 // Goods API
-export async function getGoods(params) {
+export async function getGoodses(params) {
   const url = requestParams2Url(params);
   return request(`/api/classes/Goods${url}`, {
+    method: 'GET',
+  });
+}
+
+export async function getGoods(params) {
+  return request(`/api/classes/Goods/${params.objectId}`, {
     method: 'GET',
   });
 }

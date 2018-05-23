@@ -28,8 +28,13 @@ export default class Goodses extends React.Component {
   }
 
   handleClick = (item) => {
-    const url = `/goods/goods/${item.objectId}`;
-    this.props.dispatch(routerRedux.push(url));
+    const url = '/goods/goods';
+    this.props.dispatch(routerRedux.push({
+      pathname: url,
+      state: {
+        objectId: item.objectId,
+      },
+    }));
   };
 
   render() {

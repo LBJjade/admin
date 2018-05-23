@@ -1,4 +1,3 @@
-/* eslint-disable max-len */
 import React from 'react';
 import { Upload, Modal, Icon, message, Tooltip } from 'antd';
 import moment from 'moment';
@@ -7,7 +6,8 @@ import globalConfig from '../../config';
 
 export default class UploadImage extends React.PureComponent {
   state = {
-  }
+    fileList: this.props.fileList,
+  };
 
   handleImgCancel = () => {
     this.setState({ img: { previewVisible: false } });
@@ -27,38 +27,20 @@ export default class UploadImage extends React.PureComponent {
   };
 
   handleImgRemove = (file) => {
-    const filename = file.url.substr(file.url.lastIndexOf('/') + 1);
-    const { dispatch } = this.props;
-    const { selectedNode } = this.state;
-
-    dispatch({
-      type: 'category/coverCategory',
-      payload: {
-        thumb: '',
-        objectId: selectedNode.objectId,
-      },
-    }).then(() => {
-      dispatch({
-        type: 'category/removeFile',
-        payload: filename,
-      });
-    });
+    console.log(file);
   };
 
   handleImgBeforeUpload = (file) => {
-    const isJPG = (file.type === 'image/jpeg' || file.type === 'image/png');
-    if (!isJPG) {
+    const isImage = (file.type === 'image/jpeg' || file.type === 'image/png');
+    if (!isImage) {
       message.error('只能上传图片文件！');
     }
-    // const isLt2M = file.size / 1024 / 1024 < 2;
-    // if (!isLt2M) {
-    //   message.error('Image must smaller than 2MB!');
-    // }
-    const isLt2M = file.size / 1024 / 1024 < 1;
-    if (!isLt2M) {
-      message.error('图片大小必须小于1MB！');
+    const isImageLimit = file.size < globalConfig.imageLimit;
+    if (!isImageLimit) {
+      const limit = (globalConfig.imageLimit / 1024 / 1024, 1).round(1).toString();
+      message.error(`图片大小必须小于${limit}MB！`);
     }
-    return isJPG && isLt2M;
+    return isImage && isImageLimit;
   };
 
   handleImgCustomRequest = ({ onSuccess, onError, file }) => {
@@ -94,7 +76,7 @@ export default class UploadImage extends React.PureComponent {
           /* target url */ `/api/files/${newFilename(file.name)}`
         );
         xhr.overrideMimeType('application/octet-stream');
-        xhr.setRequestHeader('X-Parse-Application-Id', 'bee');
+        xhr.setRequestHeader('X-Parse-Application-Id', globalConfig.appId);
         xhr.responseType = 'json';
         if (!XMLHttpRequest.prototype.sendAsBinary) {
           const buffer = (datastr) => {
@@ -123,40 +105,20 @@ export default class UploadImage extends React.PureComponent {
   };
 
   handleImgUploadSuccess = (response) => {
-    const { dispatch } = this.props;
-    const { selectedNode } = this.state;
-    const thumb = response.name;
-
-    if (selectedNode && selectedNode.thumb) {
-      // 移除原有文件
-      dispatch({
-        type: 'category/removeFile',
-        payload: thumb,
-      });
-    }
-
-    if (thumb) {
-      this.setState({
-        img: {
-          uploading: false,
-          fileList: [{
-            uid: thumb,
-            name: thumb,
-            status: 'done',
-            url: globalConfig.imageUrl + thumb,
-          }],
-        },
-      });
+    console.log(response);
+    if (this.props.onSuccess) {
+      this.props.onSuccess(response);
     }
   };
-
 
   render() {
     const { listType } = this.props;
     const { defaultFileList } = this.props;
-    const { fileList } = this.props;
+    // const { fileList } = this.props;
     const { limitFileCount } = this.props;
     const { tooltip } = this.props;
+
+    const { fileList } = this.state;
 
     const uploadButton = (
       <Tooltip
@@ -173,10 +135,16 @@ export default class UploadImage extends React.PureComponent {
     return (
       <div>
         <Upload
+          className={styles.uploader}
           listType={listType}
           defaultFileList={defaultFileList}
           fileList={fileList}
-          className={styles.uploader}
+          beforeUpload={this.handleImgBeforeUpload}
+          customRequest={this.handleImgCustomRequest}
+          onSuccess={respon => this.handleImgUploadSuccess(respon)}
+          onPreview={this.handleImgPreview}
+          onChange={this.handleImgChange}
+          onRemove={this.handleImgRemove}
         >
           { limitFileCount ? (fileList && fileList.length > limitFileCount ? null : uploadButton) : uploadButton }
         </Upload>
