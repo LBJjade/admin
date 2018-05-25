@@ -44,6 +44,13 @@ export default class Goods extends React.PureComponent {
         payload: {
           objectId,
         },
+      }).then(() => {
+        dispatch({
+          type: 'goods/fetchGoodsImage',
+          payload: {
+            where: { pointerGoods: { __type: 'Pointer', className: 'Goods', objectId } },
+          },
+        });
       });
     }
 
@@ -68,6 +75,12 @@ export default class Goods extends React.PureComponent {
       },
     });
   }
+
+  // componentWillReceiveProps(nextProps) {
+  //   if (nextProps.goodsImages) {
+  //     this.setState({ fileList: nextProps.goodsImages.results });
+  //   }
+  // }
 
   // componentWillReceiveProps(nextProps) {
   //   console.log(nextProps);
@@ -250,8 +263,6 @@ export default class Goods extends React.PureComponent {
   };
 
   handleImageChange = (fileInfo) => {
-    // console.log(fileList);
-    // this.setState({ fileList });
   };
 
   handleOK = (e) => {
@@ -262,14 +273,26 @@ export default class Goods extends React.PureComponent {
         let goods = values;
         const { dispatch } = this.props;
 
+        const objGoodsImage = [];
+        goods.goodsImage.forEach((image) => {
+          if (image.response) {
+            objGoodsImage.push({
+              uid: image.uid,
+              name: image.name,
+              thumb: image.response.url.substr(image.response.url.lastIndexOf('/')+1),
+              url: image.response.url,
+            });
+          }
+        });
+
         goods.onSale = goods.onSale ? 1 : 0;
         goods.isSendFree = goods.isSendFree ? 1 : 0;
 
-        const tmp = [];
+        const tmpGoodsGroup = [];
         goods.goodsGroup.forEach((item) => {
-          tmp.push(item.value);
+          tmpGoodsGroup.push(item.value);
         });
-        goods.goodsGroup = tmp;
+        goods.goodsGroup = tmpGoodsGroup;
 
         goods.pointerCategory = {
           __type: 'Pointer',
@@ -292,6 +315,20 @@ export default class Goods extends React.PureComponent {
           dispatch({
             type: 'goods/coverGoods',
             payload: goods,
+          }).then(() => {
+            // 保存图片
+            const pointerGoods = {
+              __type: 'Pointer',
+              className: 'Goods',
+              objectId: values.objectId,
+            };
+            objGoodsImage.forEach((image) => {
+              image = { ...image, pointerGoods };
+              dispatch({
+                type: 'goods/storeGoodsImage',
+                payload: image,
+              });
+            });
           });
         } else {
           // 添加商品
@@ -307,7 +344,7 @@ export default class Goods extends React.PureComponent {
   render() {
     const { form, loading } = this.props;
     const { getFieldDecorator } = form;
-    const { goods } = this.props.goods;
+    const { goods, goodsImages } = this.props.goods;
     const { adding, editing, pointerCategory, multSku } = this.state;
 
     const categorys = this.Tree(this.props.category.category.results, 'pointerCategory');
@@ -322,7 +359,7 @@ export default class Goods extends React.PureComponent {
     let { specDataSource } = this.state;
 
     // const groups = this.Tree(this.props.group.group.results, 'pointerGroup');
-    const groups = this.props.group.group.results.map(item => {
+    const groups = this.props.group.group.results.map((item) => {
       item.label = item.name;
       item.value = item.objectId;
       if (item.pointerGroup && item.pointerGroup.objectId.length > 0) {
@@ -342,23 +379,6 @@ export default class Goods extends React.PureComponent {
       });
     }
 
-
-    // const fileList = [{
-    //   uid: 'file0001',
-    //   name: 'card-1.jpeg',
-    //   status: 'done',
-    //   thumbUrl: `${globalConfig.imageUrl}card-1.jpeg`,
-    // }, {
-    //   uid: 'file0002',
-    //   name: 'card-2.jpeg',
-    //   status: 'done',
-    //   thumbUrl: `${globalConfig.imageUrl}card-2.jpeg`,
-    // }, {
-    //   uid: 'file0003',
-    //   name: 'card-3.jpeg',
-    //   status: 'done',
-    //   thumbUrl: `${globalConfig.imageUrl}card-3.jpeg`,
-    // }];
     const { fileList } = this.state;
 
     const { editorState } = this.state;
@@ -455,12 +475,15 @@ export default class Goods extends React.PureComponent {
                   {...formItemLayout}
                   label="商品主图"
                 >
-                  <UploadImage
-                    listType="picture-card"
-                    defaultFileList={fileList}
-                    limitFileCount={5}
-                    onChange={fileInfo => this.handleImageChange(fileInfo)}
-                  />
+                  {getFieldDecorator('goodsImage', {
+                    valuePropName: 'fileList',
+                    initialValue: goodsImages && goodsImages.results ? goodsImages.results : [],
+                  })(
+                    <UploadImage
+                      listType="picture-card"
+                      limitFileCount={5}
+                    />
+                  )}
                 </Form.Item>
                 <Form.Item
                   {...formItemLayout}

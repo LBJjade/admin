@@ -1,5 +1,5 @@
 import { message } from 'antd';
-import { getGoodses, getGoods, postGoods, putGoods, deleteGoods, getGoodsImage } from '../services/goods';
+import { getGoodses, getGoods, postGoods, putGoods, deleteGoods, getGoodsImage, postGoodsImage } from '../services/goods';
 
 export default {
   namespace: 'goods',
@@ -10,6 +10,7 @@ export default {
       count: 0,
     },
     goods: undefined,
+    goodsImages: undefined,
   },
 
   effects: {
@@ -23,6 +24,13 @@ export default {
     *fetchGoods({ payload }, { call, put }) {
       const respon = yield call(getGoods, payload);
       yield put({ type: 'queryGoods', payload: respon });
+      // Get GoodsImage
+      // yield put({ type: 'clearGoodsImageAll', payload: [] });
+      // if (payload.objectId) {
+      //   const goodsImagewhere = { pointerGoods: { __type: 'Pointer', className: 'Goods', objectId: payload.objectId } };
+      //   const respon2 = yield call(getGoodsImage, goodsImagewhere);
+      //   yield put({ type: 'queryGoodsImage', payload: respon2 });
+      // }
     },
     *storeGoods({ payload }, { call, put }) {
       const res = yield call(postGoods, payload);
@@ -52,10 +60,19 @@ export default {
       }
     },
 
-    // goodsImage
-    * fetchGoodsImage({ payload }, { call, put }) {
+    // goodsImages
+    *fetchGoodsImage({ payload }, { call, put }) {
       const respon = yield call(getGoodsImage, payload);
       yield put({ type: 'queryGoodsImage', payload: respon });
+    },
+    *storeGoodsImage({ payload }, { call, put }) {
+      const res = yield call(postGoodsImage, payload);
+      if (res.error) {
+        message.error(`保存失败！${res.error}`, 5);
+      } else {
+        yield put({ type: 'appendGoodsImage', payload: { ...payload, ...res } });
+        // message.success('保存成功！', 3);
+      }
     },
 
   },
@@ -104,8 +121,24 @@ export default {
     queryGoodsImage(state, action) {
       return {
         ...state,
-        goodsImage: action.payload,
+        goodsImages: action.payload,
       };
     },
+    appendGoodsImage(state, action) {
+      return ({
+        ...state,
+        goodsImages: {
+          results: state.goodsImages.results.concat(action.payload),
+          count: state.data.count + 1,
+        },
+      });
+    },
+    clearGoodsImageAll(state, action) {
+      return ({
+        ...state,
+        goodsImages: action.payload,
+      });
+    },
+
   },
 };

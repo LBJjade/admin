@@ -169,3 +169,10 @@ export async function getGoodsImage(params) {
     method: 'GET',
   });
 }
+
+export async function postGoodsImage(params) {
+  return request('/api/classes/GoodsImage', {
+    method: 'POST',
+    body: params,
+  });
+}
