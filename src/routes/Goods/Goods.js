@@ -30,6 +30,7 @@ export default class Goods extends React.PureComponent {
     adding: false,
     editing: false,
     editorState: EditorState.createEmpty(),
+    fileList: [],
   };
 
   componentDidMount() {
@@ -248,6 +249,11 @@ export default class Goods extends React.PureComponent {
     });
   };
 
+  handleImageChange = (fileInfo) => {
+    // console.log(fileList);
+    // this.setState({ fileList });
+  };
+
   handleOK = (e) => {
     e.preventDefault();
     const { validateFields } = this.props.form;
@@ -353,7 +359,7 @@ export default class Goods extends React.PureComponent {
     //   status: 'done',
     //   thumbUrl: `${globalConfig.imageUrl}card-3.jpeg`,
     // }];
-    const fileList = [];
+    const { fileList } = this.state;
 
     const { editorState } = this.state;
 
@@ -451,8 +457,9 @@ export default class Goods extends React.PureComponent {
                 >
                   <UploadImage
                     listType="picture-card"
-                    defaultFileList={[...fileList]}
+                    defaultFileList={fileList}
                     limitFileCount={5}
+                    onChange={fileInfo => this.handleImageChange(fileInfo)}
                   />
                 </Form.Item>
                 <Form.Item

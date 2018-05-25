@@ -13,7 +13,10 @@ import styles from './Goodses.less';
   goods,
 }))
 export default class Goodses extends React.Component {
-  state = {};
+  state = {
+    limit: 9,
+    skip: 0,
+  };
 
   componentDidMount() {
     const { dispatch } = this.props;
@@ -21,20 +24,38 @@ export default class Goodses extends React.Component {
       type: 'goods/fetchGoodses',
       payload: {
         count: true,
-        limit: 9,
-        skip: 0,
+        limit: this.state.limit,
+        skip: this.state.skip,
       },
     });
   }
 
   handleClick = (item) => {
+    const { dispatch } = this.props;
     const url = '/goods/goods';
-    this.props.dispatch(routerRedux.push({
+    dispatch(routerRedux.push({
       pathname: url,
       state: {
         objectId: item.objectId,
       },
     }));
+  };
+
+  handlePageChange = (page) => {
+    console.log(page);
+    const skip = (page - 1) * this.state.limit;
+    const { dispatch } = this.props;
+    dispatch({
+      type: 'goods/fetchGoodses',
+      payload: {
+        count: true,
+        limit: this.state.limit,
+        skip,
+      },
+    });
+    this.setState({
+      skip,
+    });
   };
 
   render() {
@@ -60,6 +81,11 @@ export default class Goodses extends React.Component {
             <GoodsCard
               data={goodsesData}
               onClick={item => this.handleClick(item)}
+              pagination={{
+                onChange: page => this.handlePageChange(page),
+                pageSize: this.state.limit,
+                total: goodses.count,
+              }}
             />
           </Row>
         </div>

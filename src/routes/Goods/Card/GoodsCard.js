@@ -13,7 +13,13 @@ class GoodsCard extends React.PureComponent {
   };
 
   render() {
-    const { data } = this.props;
+    const { data, pagination } = this.props;
+
+    const paginationProps = {
+      showSizeChanger: true,
+      showQuickJumper: true,
+      ...pagination,
+    };
 
     return (
       <div>
@@ -22,6 +28,7 @@ class GoodsCard extends React.PureComponent {
           className={styles.showcase}
           grid={{ gutter: 24, lg: 3, md: 2, sm: 1, xs: 1 }}
           dataSource={[...data]}
+          pagination={paginationProps}
           renderItem={(item) => {
               return item ? (
                 <List.Item key={item.objectId}>
