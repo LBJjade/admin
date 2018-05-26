@@ -1,6 +1,6 @@
 import { message } from 'antd';
 import { getCategory, postCategory, putCategory, deleteCategory } from '../services/goods';
-import { deleteFile } from '../services/file';
+import { deleteFileStorage } from '../services/file';
 
 export default {
   namespace: 'category',
@@ -57,7 +57,7 @@ export default {
     },
 
     *removeFile({ payload }, { call }) {
-      const res = yield call(deleteFile, payload);
+      const res = yield call(deleteFileStorage, payload);
       if (res.error) {
         message.error(`删除文件失败！${res.error}`, 10);
       }

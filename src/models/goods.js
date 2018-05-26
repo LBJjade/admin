@@ -9,8 +9,9 @@ export default {
       results: [],
       count: 0,
     },
-    goods: undefined,
+    // goods: undefined,
     goodsImages: undefined,
+    goods: undefined,
   },
 
   effects: {
@@ -22,12 +23,18 @@ export default {
 
     // goods
     *fetchGoods({ payload }, { call, put }) {
+      // Get Goods
       const respon = yield call(getGoods, payload);
       yield put({ type: 'queryGoods', payload: respon });
+
       // Get GoodsImage
-      // yield put({ type: 'clearGoodsImageAll', payload: [] });
+      // yield put({ type: 'emptyGoodsImage' });
       // if (payload.objectId) {
-      //   const goodsImagewhere = { pointerGoods: { __type: 'Pointer', className: 'Goods', objectId: payload.objectId } };
+      //   const goodsImagewhere = {
+      //     where: {
+      //       pointerGoods: { __type: 'Pointer', className: 'Goods', objectId: payload.objectId },
+      //     },
+      //   };
       //   const respon2 = yield call(getGoodsImage, goodsImagewhere);
       //   yield put({ type: 'queryGoodsImage', payload: respon2 });
       // }
@@ -59,6 +66,9 @@ export default {
         message.success('删除成功！', 3);
       }
     },
+    *trashGoods(_, { put }) {
+      yield put({ type: 'emptyGoods' });
+    },
 
     // goodsImages
     *fetchGoodsImage({ payload }, { call, put }) {
@@ -73,6 +83,9 @@ export default {
         yield put({ type: 'appendGoodsImage', payload: { ...payload, ...res } });
         // message.success('保存成功！', 3);
       }
+    },
+    *trashGoodsImage(_, { put }) {
+      yield put({ type: 'emptyGoodsImage' });
     },
 
   },
@@ -95,10 +108,7 @@ export default {
     appendGoods(state, action) {
       return ({
         ...state,
-        goods: {
-          results: state.Goods.results.concat(action.payload),
-          count: state.data.count + 1,
-        },
+        goods: action.payload,
       });
     },
     resetGoods(state, action) {
@@ -114,6 +124,12 @@ export default {
           results: state.goods.results.filter(item => item.objectId !== action.payload.objectId),
           count: state.goods.count - 1,
         },
+      });
+    },
+    emptyGoods(state) {
+      return ({
+        ...state,
+        goods: undefined,
       });
     },
 
@@ -133,12 +149,11 @@ export default {
         },
       });
     },
-    clearGoodsImageAll(state, action) {
+    emptyGoodsImage(state) {
       return ({
         ...state,
-        goodsImages: action.payload,
+        goodsImages: undefined,
       });
     },
-
   },
 };

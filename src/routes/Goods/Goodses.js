@@ -31,18 +31,20 @@ export default class Goodses extends React.Component {
   }
 
   handleClick = (item) => {
+    // const { dispatch } = this.props;
+    // const url = '/goods/goods';
+    // dispatch(routerRedux.push({
+    //   pathname: url,
+    //   state: {
+    //     objectId: item.objectId,
+    //   },
+    // }));
     const { dispatch } = this.props;
-    const url = '/goods/goods';
-    dispatch(routerRedux.push({
-      pathname: url,
-      state: {
-        objectId: item.objectId,
-      },
-    }));
+    dispatch(routerRedux.push(`/goods/goods?${item.objectId}`));
   };
 
   handlePageChange = (page) => {
-    console.log(page);
+    // console.log(page);
     const skip = (page - 1) * this.state.limit;
     const { dispatch } = this.props;
     dispatch({

@@ -15,12 +15,13 @@ import UploadImage from '../../components/UploadImage';
 const { TextArea } = Input;
 const RadioGroup = Radio.Group;
 
-@connect(({ goods, loading, category, group, spec }) => ({
+@connect(({ goods, loading, category, group, spec, file }) => ({
   goods,
   loading: loading.models.goods,
   category,
   group,
   spec,
+  file,
 }))
 @Form.create()
 export default class Goods extends React.PureComponent {
@@ -31,14 +32,15 @@ export default class Goods extends React.PureComponent {
     editing: false,
     editorState: EditorState.createEmpty(),
     fileList: [],
+    goods: undefined,
   };
 
   componentDidMount() {
     const { dispatch, location } = this.props;
-    const { state } = location;
+    const { search } = location;
 
-    if (state && state.objectId) {
-      const { objectId } = state;
+    if (search) {
+      const objectId = search.replace('?', '');
       dispatch({
         type: 'goods/fetchGoods',
         payload: {
@@ -51,6 +53,13 @@ export default class Goods extends React.PureComponent {
             where: { pointerGoods: { __type: 'Pointer', className: 'Goods', objectId } },
           },
         });
+      });
+    } else {
+      dispatch({
+        type: 'goods/trashGoods',
+      });
+      dispatch({
+        type: 'goods/trashGoodsImage',
       });
     }
 
@@ -76,11 +85,28 @@ export default class Goods extends React.PureComponent {
     });
   }
 
+  componentWillReceiveProps(nextProps) {
+    if (nextProps.goods.goods) {
+      this.setState({ goods: nextProps.goods.goods });
+    }
+  }
+
   // componentWillReceiveProps(nextProps) {
   //   if (nextProps.goodsImages) {
   //     this.setState({ fileList: nextProps.goodsImages.results });
   //   }
   // }
+
+  componentWillUnmount() {
+    const { dispatch } = this.props;
+    dispatch({
+      type: 'goods/trashGoods',
+    });
+    dispatch({
+      type: 'goods/trashGoodsImage',
+    });
+  }
+
 
   // componentWillReceiveProps(nextProps) {
   //   console.log(nextProps);
@@ -97,7 +123,7 @@ export default class Goods extends React.PureComponent {
   //     });
   //
   //     dispatch({
-  //       type: 'goods/fetchGoodsImage',
+  //       type: 'goods/fetchGoodsImages',
   //       payload: {
   //         where: {
   //           pointerGoods: {
@@ -264,6 +290,22 @@ export default class Goods extends React.PureComponent {
 
   handleImageChange = (fileInfo) => {
   };
+  handleImageSuccess = (fileInfo) => {
+    const { dispatch } = this.props;
+    const file = {
+      uid: fileInfo.file.uid,
+      name: fileInfo.file.name,
+      size: fileInfo.file.size,
+      type: fileInfo.file.type,
+      lastModifiedDate: fileInfo.file.lastModifiedDate,
+      thumbUrl: fileInfo.response.name,
+      url: fileInfo.response.url,
+    };
+    dispatch({
+      type: 'file/storeFile',
+      payload: file,
+    });
+  };
 
   handleOK = (e) => {
     e.preventDefault();
@@ -274,16 +316,23 @@ export default class Goods extends React.PureComponent {
         const { dispatch } = this.props;
 
         const objGoodsImage = [];
+        const thumb = [];
         goods.goodsImage.forEach((image) => {
           if (image.response) {
+            const urlImage = image.response.url;
+            thumb.push(urlImage.substr(urlImage.lastIndexOf('/') + 1));
             objGoodsImage.push({
               uid: image.uid,
               name: image.name,
-              thumb: image.response.url.substr(image.response.url.lastIndexOf('/')+1),
-              url: image.response.url,
+              thumb: urlImage.substr(urlImage.lastIndexOf('/') + 1),
+              url: urlImage,
             });
+          } else {
+            thumb.push(image.name);
           }
         });
+        delete goods.goodsImage;
+        goods.thumb = thumb;
 
         goods.onSale = goods.onSale ? 1 : 0;
         goods.isSendFree = goods.isSendFree ? 1 : 0;
@@ -335,6 +384,22 @@ export default class Goods extends React.PureComponent {
           dispatch({
             type: 'goods/storeGoods',
             payload: goods,
+          }).then(() => {
+            const { goods } = this.props.goods;
+            if (goods) {
+              const pointerGoods = {
+                __type: 'Pointer',
+                className: 'Goods',
+                objectId: goods.objectId,
+              };
+              objGoodsImage.forEach((image) => {
+                image = { ...image, pointerGoods };
+                dispatch({
+                  type: 'goods/storeGoodsImage',
+                  payload: image,
+                });
+              });
+            }
           });
         }
       }
@@ -481,7 +546,7 @@ export default class Goods extends React.PureComponent {
                   })(
                     <UploadImage
                       listType="picture-card"
-                      limitFileCount={5}
+                      onSuccess={this.handleImageSuccess}
                     />
                   )}
                 </Form.Item>
@@ -578,7 +643,7 @@ export default class Goods extends React.PureComponent {
                     valuePropName: 'checked',
                     initialValue: goods && goods.onSale > 0,
                     rules: [
-                      { required: true, message: '请输入商品单价！' },
+                      { required: false, message: '请选择上架/下架！' },
                     ],
                   })(
                     <Switch checkedChildren="上架" unCheckedChildren="下架" />

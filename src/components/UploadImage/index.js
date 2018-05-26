@@ -1,10 +1,15 @@
 /* eslint-disable no-param-reassign */
 import React from 'react';
+import { connect } from 'dva';
 import { Upload, Modal, Icon, message, Tooltip, Button } from 'antd';
 import moment from 'moment';
 import styles from './index.less';
 import globalConfig from '../../config';
 
+@connect(({ file, loading }) => ({
+  file,
+  loading: loading.models.file,
+}))
 export default class UploadImage extends React.PureComponent {
   state = {
     uploading: false,
@@ -29,7 +34,11 @@ export default class UploadImage extends React.PureComponent {
   };
 
   handleRemove = (file) => {
-
+    // const { fileList } = this.state;
+    // this.setState({
+    //   fileList: [...fileList.filter(i => i.uid !== file.uid)],
+    // });
+    return true;
   };
 
   handleChange = (changeValue) => {
@@ -107,6 +116,9 @@ export default class UploadImage extends React.PureComponent {
         xhr.onreadystatechange = () => {
           if (xhr.readyState === 4) {
             if (xhr.status === 200 || xhr.status === 201) {
+              if (this.props.onSuccess) {
+                this.props.onSuccess({ file, response: xhr.response });
+              }
               onSuccess(xhr.response);
             }
           }
@@ -119,7 +131,6 @@ export default class UploadImage extends React.PureComponent {
 
   render() {
     const { listType } = this.props;
-    const { limitFileCount } = this.props;
     const { tooltip } = this.props;
 
     const { fileList, uploading } = this.state;
@@ -145,8 +156,9 @@ export default class UploadImage extends React.PureComponent {
           customRequest={this.handleCustomRequest}
           onChange={this.handleChange}
           fileList={this.state.fileList}
+          onRemove={this.handleRemove}
         >
-          { limitFileCount ? (fileList && fileList.length > limitFileCount ? null : uploadButton) : uploadButton }
+          { globalConfig.goodsImagesLimit ? (fileList && fileList.length > globalConfig.goodsImagesLimit ? null : uploadButton) : uploadButton }
         </Upload>
         <Modal visible={false} footer={null} onCancel={this.handleCancel}>
           <img alt="example" style={{ width: '100%' }} src="" />

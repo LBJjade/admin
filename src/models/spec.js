@@ -1,6 +1,5 @@
 import { message } from 'antd';
 import { getSpec, postSpec, putSpec, deleteSpec } from '../services/goods';
-import { deleteFile } from '../services/file';
 
 export default {
   namespace: 'spec',
