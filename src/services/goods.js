@@ -176,3 +176,9 @@ export async function postGoodsImage(params) {
     body: params,
   });
 }
+
+export async function deleteGoodsImage(params) {
+  return request(`/api/classes/GoodsImage/${params.objectId}`, {
+    method: 'DELETE',
+  });
+}

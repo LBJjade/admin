@@ -38,6 +38,9 @@ export default class UploadImage extends React.PureComponent {
     // this.setState({
     //   fileList: [...fileList.filter(i => i.uid !== file.uid)],
     // });
+    if (this.props.onRemove) {
+      this.props.onRemove(file);
+    }
     return true;
   };
 

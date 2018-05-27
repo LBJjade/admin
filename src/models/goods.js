@@ -1,5 +1,5 @@
 import { message } from 'antd';
-import { getGoodses, getGoods, postGoods, putGoods, deleteGoods, getGoodsImage, postGoodsImage } from '../services/goods';
+import { getGoodses, getGoods, postGoods, putGoods, deleteGoods, getGoodsImage, postGoodsImage, deleteGoodsImage } from '../services/goods';
 
 export default {
   namespace: 'goods',
@@ -84,6 +84,16 @@ export default {
         // message.success('保存成功！', 3);
       }
     },
+    *removeGoodsImage({ payload }, { call, put }) {
+      const res = yield call(deleteGoodsImage, payload);
+      if (res.error) {
+        message.error(`删除失败！${res.error}`, 5);
+      } else {
+        yield put({ type: 'clearGoodsImage', payload: { ...payload } });
+        message.success('删除成功！', 3);
+      }
+    },
+
     *trashGoodsImage(_, { put }) {
       yield put({ type: 'emptyGoodsImage' });
     },
@@ -149,6 +159,16 @@ export default {
         },
       });
     },
+    clearGoodsImage(state, action) {
+      return ({
+        ...state,
+        GoodsImage: {
+          results: state.goodsImage.results.filter(item => item.objectId !== action.payload.objectId),
+          count: state.goodsImage.count - 1,
+        },
+      });
+    },
+
     emptyGoodsImage(state) {
       return ({
         ...state,

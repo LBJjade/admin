@@ -1,7 +1,8 @@
+/* eslint-disable prefer-destructuring */
 import React from 'react';
 import { connect } from 'dva';
-import { Route, Redirect } from 'dva/router';
-import { Row, Col, Card, Input, Icon, InputNumber, Switch, Button, Form, Upload, Modal, TreeSelect, Radio, Checkbox, Tabs, Table, Select } from 'antd';
+import { Route, Redirect, Link } from 'dva/router';
+import { Row, Col, Card, Input, Icon, InputNumber, Switch, Button, Form, Upload, Modal, TreeSelect, Radio, Checkbox, Tabs, Table, Select, Spin } from 'antd';
 import { EditorState, convertToRaw, ContentState } from 'draft-js';
 import { Editor } from 'react-draft-wysiwyg';
 import 'react-draft-wysiwyg/dist/react-draft-wysiwyg.css';
@@ -11,6 +12,7 @@ import styles from './Goods.less';
 import globalConfig from '../../config';
 import EditableTable from '../../components/EditableTable';
 import UploadImage from '../../components/UploadImage';
+import Exception from 'components/Exception';
 
 const { TextArea } = Input;
 const RadioGroup = Radio.Group;
@@ -88,6 +90,12 @@ export default class Goods extends React.PureComponent {
   componentWillReceiveProps(nextProps) {
     if (nextProps.goods.goods) {
       this.setState({ goods: nextProps.goods.goods });
+    }
+    const { search } = this.props.location;
+    if (search) {
+      this.setState({ editing: true });
+    } else {
+      this.setState({ adding: true });
     }
   }
 
@@ -288,8 +296,6 @@ export default class Goods extends React.PureComponent {
     });
   };
 
-  handleImageChange = (fileInfo) => {
-  };
   handleImageSuccess = (fileInfo) => {
     const { dispatch } = this.props;
     const file = {
@@ -307,6 +313,17 @@ export default class Goods extends React.PureComponent {
     });
   };
 
+  handleImageRemove = (file) => {
+    const { dispatch } = this.props;
+    const { goodsImages } = this.props.goods;
+    goodsImages.results.filter(i => i.uid === file.uid).forEach((j) => {
+      dispatch({
+        type: 'goods/removeGoodsImage',
+        payload: { objectId: j.objectId },
+      });
+    });
+  };
+
   handleOK = (e) => {
     e.preventDefault();
     const { validateFields } = this.props.form;
@@ -316,23 +333,22 @@ export default class Goods extends React.PureComponent {
         const { dispatch } = this.props;
 
         const objGoodsImage = [];
-        const thumb = [];
+        const thumbs = [];
         goods.goodsImage.forEach((image) => {
+          const uid = image.uid;
+          let name = image.name;
+          let url = image.url;
+          let thumb = image.thumb;
           if (image.response) {
-            const urlImage = image.response.url;
-            thumb.push(urlImage.substr(urlImage.lastIndexOf('/') + 1));
-            objGoodsImage.push({
-              uid: image.uid,
-              name: image.name,
-              thumb: urlImage.substr(urlImage.lastIndexOf('/') + 1),
-              url: urlImage,
-            });
-          } else {
-            thumb.push(image.name);
+            url = image.response.url;
+            name = url.substr(url.lastIndexOf('/') + 1);
+            thumb = url.substr(url.lastIndexOf('/') + 1);
           }
+          thumbs.push(name);
+          objGoodsImage.push({ uid, name, thumb, url });
         });
         delete goods.goodsImage;
-        goods.thumb = thumb;
+        goods.thumbs = thumbs;
 
         goods.onSale = goods.onSale ? 1 : 0;
         goods.isSendFree = goods.isSendFree ? 1 : 0;
@@ -406,6 +422,10 @@ export default class Goods extends React.PureComponent {
     });
   };
 
+  handleCancel = () => {
+    this.props.history.goBack();
+  };
+
   render() {
     const { form, loading } = this.props;
     const { getFieldDecorator } = form;
@@ -415,10 +435,15 @@ export default class Goods extends React.PureComponent {
     const categorys = this.Tree(this.props.category.category.results, 'pointerCategory');
     const specs = this.Tree(this.props.spec.spec.results, 'pointerSpec');
 
-    let { categorySpec } = this.state;
-    if (!multSku) {
-      categorySpec = [];
+    let error = false;
+    if (editing && (goods === undefined || goods.error)) {
+      error = true;
     }
+
+    // let { categorySpec } = this.state;
+    // if (!multSku) {
+    //   categorySpec = [];
+    // }
 
     let { specColumns } = this.state;
     let { specDataSource } = this.state;
@@ -443,8 +468,6 @@ export default class Goods extends React.PureComponent {
         });
       });
     }
-
-    const { fileList } = this.state;
 
     const { editorState } = this.state;
 
@@ -518,341 +541,343 @@ export default class Goods extends React.PureComponent {
       },
     };
 
-    const formItemLayoutMult = {
-      xs: { span: 24 },
-      sm: { span: 6 },
-    };
-
     return (
-      <div>
-        <PageHeaderLayout>
-          <div className={styles.goods}>
-            <Form>
-              <Card>
-                <Form.Item>
-                  {getFieldDecorator('objectId', {
-                    initialValue: goods ? goods.objectId || '' : '',
-                  })(
-                    <Input hidden />
-                  )}
-                </Form.Item>
-                <Form.Item
-                  {...formItemLayout}
-                  label="商品主图"
-                >
-                  {getFieldDecorator('goodsImage', {
-                    valuePropName: 'fileList',
-                    initialValue: goodsImages && goodsImages.results ? goodsImages.results : [],
-                  })(
-                    <UploadImage
-                      listType="picture-card"
-                      onSuccess={this.handleImageSuccess}
-                    />
-                  )}
-                </Form.Item>
-                <Form.Item
-                  {...formItemLayout}
-                  label="商品标题"
-                >
-                  {getFieldDecorator('title', {
-                    initialValue: goods ? goods.title || '' : '',
-                    rules: [
-                      { required: true, message: '请输入商品标题！' },
-                    ],
-                  })(
-                    <Input placeholder="给商品起一个通俗易懂的标题，该标题将在商城的商品标题显示..." />
-                  )}
-                </Form.Item>
-                <Form.Item
-                  {...formItemLayout}
-                  label="商品描述"
-                >
-                  {getFieldDecorator('description', {
-                    initialValue: goods ? goods.description || '' : '',
-                    rules: [
-                      { required: false, message: '请输入商品描述！' },
-                    ],
-                  })(
-                    <TextArea
-                      rows={2}
-                      placeholder="请输入商品描述；该商品描述在商城的一些商品显示页中作为副标题显示。"
-                    />
-                  )}
-                </Form.Item>
-                <Form.Item
-                  {...formItemLayout}
-                  label="商品名称"
-                >
-                  {getFieldDecorator('goodsName', {
-                    initialValue: goods ? goods.goodsName || '' : '',
-                    rules: [
-                      { required: false, message: '请输入商品名称！' },
-                    ],
-                  })(
-                    <Input placeholder="行业标准的商品名称..." />
-                  )}
-                </Form.Item>
-                <Form.Item
-                  {...formItemLayoutM}
-                  label="商品编号"
-                >
-                  {getFieldDecorator('goodsSn', {
-                    initialValue: goods ? goods.goodsSn || '' : '',
-                    rules: [
-                      { required: false, message: '请输入商品编号！' },
-                    ],
-                  })(
-                    <Input placeholder="行业标准的商品编号..." />
-                  )}
-                </Form.Item>
-                <Form.Item
-                  {...formItemLayout}
-                  label="单价"
-                >
-                  {getFieldDecorator('price', {
-                    initialValue: goods ? goods.price || 0 : 0,
-                    rules: [
-                      { required: true, message: '请输入商品单价！' },
-                    ],
-                  })(
-                    <InputNumber
-                      formatter={value => `¥ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
-                      parser={value => value.replace(/\¥\s?|(,*)/g, '')}
-                    />
-                  )}
-                </Form.Item>
-                <Form.Item
-                  {...formItemLayout}
-                  label="是否包邮"
-                >
-                  {getFieldDecorator('isSendFree', {
-                    valuePropName: 'checked',
-                    initialValue: goods && goods.isSendFree > 0,
-                    rules: [
-                      { required: false, message: '请选择是否包邮配送！' },
-                    ],
-                  })(
-                    <Checkbox>包邮</Checkbox>
-                  )}
-                </Form.Item>
-                <Form.Item
-                  {...formItemLayout}
-                  label="上架/下架"
-                >
-                  {getFieldDecorator('onSale', {
-                    valuePropName: 'checked',
-                    initialValue: goods && goods.onSale > 0,
-                    rules: [
-                      { required: false, message: '请选择上架/下架！' },
-                    ],
-                  })(
-                    <Switch checkedChildren="上架" unCheckedChildren="下架" />
-                  )}
-                </Form.Item>
-                <Form.Item
-                  {...formItemLayout}
-                  label="实物/虚拟"
-                >
-                  {getFieldDecorator('goodsType', {
-                    initialValue: goods ? goods.goodsType || 0 : 0,
-                    rules: [
-                      { required: false, message: '请选择是否虚拟商品！' },
-                    ],
-                  })(
-                    <RadioGroup onChange={this.onChange}>
-                      <Radio value={0}>实物商品</Radio>
-                      <Radio value={1}>虚拟商品（服务产品）</Radio>
-                    </RadioGroup>
-                  )}
-                </Form.Item>
-                <Form.Item
-                  {...formItemLayout}
-                  label="减库存方式"
-                >
-                  {getFieldDecorator('stockCnf', {
-                    initialValue: goods ? goods.stockCnf || 1 : 1,
-                    rules: [
-                      { required: false, message: '请选择减库存方式！' },
-                    ],
-                  })(
-                    <RadioGroup>
-                      <Radio value={1}>拍下减库存</Radio>
-                      <Radio value={0}>永不减库存</Radio>
-                    </RadioGroup>
-                  )}
-                </Form.Item>
-                <Form.Item
-                  {...formItemLayout}
-                  label="零库存"
-                >
-                  {getFieldDecorator('zeroStock', {
-                    initialValue: goods ? goods.zeroStock || 1 : 1,
-                    rules: [
-                      { required: false, message: '选择零库存影响上下架方式！' },
-                    ],
-                  })(
-                    <RadioGroup onChange={this.onChange}>
-                      <Radio value={1}>零库存自动下架</Radio>
-                      <Radio value={0}>零库存不改变上下架状态</Radio>
-                    </RadioGroup>
-                  )}
-                </Form.Item>
-                <Form.Item
-                  {...formItemLayout}
-                  label="商品分类"
-                >
-                  {getFieldDecorator('goodsGroup', {
-                    initialValue: goodsGroup,
-                  })(
-                    <TreeSelect
-                      treeData={groups}
-                      treeCheckable
-                      showCheckedStrategy={TreeSelect.SHOW_ALL}
-                      treeCheckStrictly
-                      treeDataSimpleMode={{ id: 'objectId', pId: 'parentGroup', rootPId: null }}
-                      placeholder="请选择商品分类"
-                    />
-                  )}
-                </Form.Item>
-                <Form.Item
-                  {...formItemLayout}
-                  label="商品类目"
-                >
-                  {getFieldDecorator('pointerCategory', {
-                    initialValue: goods && goods.pointerCategory ? goods.pointerCategory.objectId || '' : '',
-                    rules: [
-                      { required: false, message: '请输入商品类目！' },
-                    ],
-                  })(
-                    <TreeSelect
-                      treeData={categorys}
-                      placeholder="请选择商品类目"
-                      onChange={value => this.handleCategoryChange(value)}
-                    />
-                  )}
-                </Form.Item>
-                <Form.Item
-                  {...formItemLayout}
-                  label="商品多规格"
-                >
-                  {getFieldDecorator('multSku', {
-                    valuePropName: 'checked',
-                    initialValue: goods && goods.multSku > 0,
-                    rules: [
-                      { required: false, message: '请选择商品是否多规格！' },
-                    ],
-                  })(
-                    <Checkbox onChange={e => this.handleMultSkuChange(e)} >是否多规格</Checkbox>
-                  )}
-                </Form.Item>
-                <Form.Item
-                  {...formItemLayout}
-                  label="商品规格"
-                >
-                  {getFieldDecorator('goodsSpec', {
-                    initialValue: goods && goods.goodsSpec ? goods.goodsSpec : [],
-                    rules: [
-                      { required: false, message: '请选择商品规格！' },
-                    ],
-                  })(
-                    <TreeSelect
-                      treeData={this.state.multSku ? specs : []}
-                      treeCheckable
-                      showCheckedStrategy={TreeSelect.SHOW_CHILD}
-                      placeholder="请选择商品规格"
-                      onChange={value => this.handleGoodsSpecChange(value)}
-                    />
-                  )}
-                </Form.Item>
-                <Form.Item
-                  {...formItemLayout}
-                  label="规格单价库存"
-                >
-                  {getFieldDecorator('goodsSku', {
-                    valuePropName: 'dataSource',
-                    initialValue: this.state.multSku ? specDataSource : [],
-                  })(
-                    <EditableTable
-                      size="small"
-                      columns={this.state.multSku ? specColumns : []}
-                      pagination={false}
-                    />
-                  )}
-                </Form.Item>
-                <Form.Item
-                  {...formItemLayout}
-                  label="推广栏目"
-                >
-                  {getFieldDecorator('isRecommand', {
-                    valuePropName: 'checked',
-                    initialValue: goods && goods.isRecommand > 0,
-                    rules: [
-                      { required: false, message: '是否人气推荐！' },
-                    ],
-                  })(
-                    <Checkbox>人气推荐</Checkbox>
-                  )}
-                </Form.Item>
-                <Form.Item
-                  {...formItemLayoutNolabel}
-                >
-                  {getFieldDecorator('isNew', {
-                    valuePropName: 'checked',
-                    initialValue: goods && goods.isNew > 0,
-                    rules: [
-                      { required: false, message: '是否新品首发！' },
-                    ],
-                  })(
-                    <Checkbox>新品首发</Checkbox>
-                  )}
-                </Form.Item>
-                <Form.Item
-                  {...formItemLayout}
-                  label="关键字"
-                >
-                  {getFieldDecorator('keyword', {
-                    initialValue: keyword,
-                    rules: [
-                      { required: false, message: '请输入商品关键字！' },
-                    ],
-                  })(
-                    <Select
-                      mode="tags"
-                      style={{ width: '100%' }}
-                      tokenSeparators={[',']}
-                      tags
-                      placeholder="输入该商品的一些关键字，便于快速查找到该商品信息；回车键输入多个。"
-                    />
-                  )}
-                </Form.Item>
-                <Form.Item
-                  {...formItemLayout}
-                  label="详细描述"
-                >
-                  <Editor
-                    // https://jpuri.github.io/react-draft-wysiwyg/#/docs
-                    localization={{ locale: 'zh' }}
-                    editorState={editorState}
-                    // toolbarClassName="toolbarClassName"
-                    // wrapperClassName="wrapperClassName"
-                    // editorClassName="editorClassName"
-                    // wrapperClassName="wysiwyg-wrapper"
-                    toolbar={{
-                      options: ['inline', 'blockType', 'fontSize', 'fontFamily', 'list', 'textAlign', 'colorPicker', 'link', 'embedded', 'emoji', 'image', 'remove', 'history'],
-                    }}
-                    onEditorStateChange={this.handleChange}
-                    editorStyle={{ height: 360, border: 1, borderStyle: 'solid', borderColor: '#ccc' }}
-                  />
-                </Form.Item>
-              </Card>
-            </Form>
-          </div>
-        </PageHeaderLayout>
-        <FooterToolbar>
-          <Button type="default" htmlType="button" onClick={e => this.handleCancelEdit(e)} >取消</Button>
-          <Button type="primary" htmlType="button" onClick={e => this.handleOK(e)} loading={loading} >保存</Button>
-        </FooterToolbar>
-      </div>
+      loading ? (<Card style={{ textAlign: 'center' }}><Spin /></Card>) :
+        (error ?
+          (<Exception type="404" style={{ minHeight: 500, height: '80%' }} linkElement={Link} />) :
+          (
+            <div>
+              <PageHeaderLayout>
+                <div className={styles.goods}>
+                  <Form>
+                    <Card>
+                      <Form.Item>
+                        {getFieldDecorator('objectId', {
+                          initialValue: goods ? goods.objectId || '' : '',
+                        })(
+                          <Input hidden />
+                        )}
+                      </Form.Item>
+                      <Form.Item
+                        {...formItemLayout}
+                        label="商品主图"
+                      >
+                        {getFieldDecorator('goodsImage', {
+                          valuePropName: 'fileList',
+                          initialValue: goodsImages && goodsImages.results ? goodsImages.results : [],
+                        })(
+                          <UploadImage
+                            listType="picture-card"
+                            onSuccess={this.handleImageSuccess}
+                            onRemove={this.handleImageRemove}
+                          />
+                        )}
+                      </Form.Item>
+                      <Form.Item
+                        {...formItemLayout}
+                        label="商品标题"
+                      >
+                        {getFieldDecorator('title', {
+                          initialValue: goods ? goods.title || '' : '',
+                          rules: [
+                            { required: true, message: '请输入商品标题！' },
+                          ],
+                        })(
+                          <Input placeholder="给商品起一个通俗易懂的标题，该标题将在商城的商品标题显示..." />
+                        )}
+                      </Form.Item>
+                      <Form.Item
+                        {...formItemLayout}
+                        label="商品描述"
+                      >
+                        {getFieldDecorator('description', {
+                          initialValue: goods ? goods.description || '' : '',
+                          rules: [
+                            { required: false, message: '请输入商品描述！' },
+                          ],
+                        })(
+                          <TextArea
+                            rows={2}
+                            placeholder="请输入商品描述；该商品描述在商城的一些商品显示页中作为副标题显示。"
+                          />
+                        )}
+                      </Form.Item>
+                      <Form.Item
+                        {...formItemLayout}
+                        label="商品名称"
+                      >
+                        {getFieldDecorator('goodsName', {
+                          initialValue: goods ? goods.goodsName || '' : '',
+                          rules: [
+                            { required: false, message: '请输入商品名称！' },
+                          ],
+                        })(
+                          <Input placeholder="行业标准的商品名称..." />
+                        )}
+                      </Form.Item>
+                      <Form.Item
+                        {...formItemLayoutM}
+                        label="商品编号"
+                      >
+                        {getFieldDecorator('goodsSn', {
+                          initialValue: goods ? goods.goodsSn || '' : '',
+                          rules: [
+                            { required: false, message: '请输入商品编号！' },
+                          ],
+                        })(
+                          <Input placeholder="行业标准的商品编号..." />
+                        )}
+                      </Form.Item>
+                      <Form.Item
+                        {...formItemLayout}
+                        label="单价"
+                      >
+                        {getFieldDecorator('price', {
+                          initialValue: goods ? goods.price || 0 : 0,
+                          rules: [
+                            { required: true, message: '请输入商品单价！' },
+                          ],
+                        })(
+                          <InputNumber
+                            formatter={value => `¥ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+                            parser={value => value.replace(/\¥\s?|(,*)/g, '')}
+                          />
+                        )}
+                      </Form.Item>
+                      <Form.Item
+                        {...formItemLayout}
+                        label="是否包邮"
+                      >
+                        {getFieldDecorator('isSendFree', {
+                          valuePropName: 'checked',
+                          initialValue: goods && goods.isSendFree > 0,
+                          rules: [
+                            { required: false, message: '请选择是否包邮配送！' },
+                          ],
+                        })(
+                          <Checkbox>包邮</Checkbox>
+                        )}
+                      </Form.Item>
+                      <Form.Item
+                        {...formItemLayout}
+                        label="上架/下架"
+                      >
+                        {getFieldDecorator('onSale', {
+                          valuePropName: 'checked',
+                          initialValue: goods && goods.onSale > 0,
+                          rules: [
+                            { required: false, message: '请选择上架/下架！' },
+                          ],
+                        })(
+                          <Switch checkedChildren="上架" unCheckedChildren="下架" />
+                        )}
+                      </Form.Item>
+                      <Form.Item
+                        {...formItemLayout}
+                        label="实物/虚拟"
+                      >
+                        {getFieldDecorator('goodsType', {
+                          initialValue: goods ? goods.goodsType || 0 : 0,
+                          rules: [
+                            { required: false, message: '请选择是否虚拟商品！' },
+                          ],
+                        })(
+                          <RadioGroup onChange={this.onChange}>
+                            <Radio value={0}>实物商品</Radio>
+                            <Radio value={1}>虚拟商品（服务产品）</Radio>
+                          </RadioGroup>
+                        )}
+                      </Form.Item>
+                      <Form.Item
+                        {...formItemLayout}
+                        label="减库存方式"
+                      >
+                        {getFieldDecorator('stockCnf', {
+                          initialValue: goods ? goods.stockCnf || 1 : 1,
+                          rules: [
+                            { required: false, message: '请选择减库存方式！' },
+                          ],
+                        })(
+                          <RadioGroup>
+                            <Radio value={1}>拍下减库存</Radio>
+                            <Radio value={0}>永不减库存</Radio>
+                          </RadioGroup>
+                        )}
+                      </Form.Item>
+                      <Form.Item
+                        {...formItemLayout}
+                        label="零库存"
+                      >
+                        {getFieldDecorator('zeroStock', {
+                          initialValue: goods ? goods.zeroStock || 1 : 1,
+                          rules: [
+                            { required: false, message: '选择零库存影响上下架方式！' },
+                          ],
+                        })(
+                          <RadioGroup onChange={this.onChange}>
+                            <Radio value={1}>零库存自动下架</Radio>
+                            <Radio value={0}>零库存不改变上下架状态</Radio>
+                          </RadioGroup>
+                        )}
+                      </Form.Item>
+                      <Form.Item
+                        {...formItemLayout}
+                        label="商品分类"
+                      >
+                        {getFieldDecorator('goodsGroup', {
+                          initialValue: goodsGroup,
+                        })(
+                          <TreeSelect
+                            treeData={groups}
+                            treeCheckable
+                            showCheckedStrategy={TreeSelect.SHOW_ALL}
+                            treeCheckStrictly
+                            treeDataSimpleMode={{ id: 'objectId', pId: 'parentGroup', rootPId: null }}
+                            placeholder="请选择商品分类"
+                          />
+                        )}
+                      </Form.Item>
+                      <Form.Item
+                        {...formItemLayout}
+                        label="商品类目"
+                      >
+                        {getFieldDecorator('pointerCategory', {
+                          initialValue: goods && goods.pointerCategory ? goods.pointerCategory.objectId || '' : '',
+                          rules: [
+                            { required: false, message: '请输入商品类目！' },
+                          ],
+                        })(
+                          <TreeSelect
+                            treeData={categorys}
+                            placeholder="请选择商品类目"
+                            onChange={value => this.handleCategoryChange(value)}
+                          />
+                        )}
+                      </Form.Item>
+                      <Form.Item
+                        {...formItemLayout}
+                        label="商品多规格"
+                      >
+                        {getFieldDecorator('multSku', {
+                          valuePropName: 'checked',
+                          initialValue: goods && goods.multSku > 0,
+                          rules: [
+                            { required: false, message: '请选择商品是否多规格！' },
+                          ],
+                        })(
+                          <Checkbox onChange={e => this.handleMultSkuChange(e)} >是否多规格</Checkbox>
+                        )}
+                      </Form.Item>
+                      <Form.Item
+                        {...formItemLayout}
+                        label="商品规格"
+                      >
+                        {getFieldDecorator('goodsSpec', {
+                          initialValue: goods && goods.goodsSpec ? goods.goodsSpec : [],
+                          rules: [
+                            { required: false, message: '请选择商品规格！' },
+                          ],
+                        })(
+                          <TreeSelect
+                            treeData={this.state.multSku ? specs : []}
+                            treeCheckable
+                            showCheckedStrategy={TreeSelect.SHOW_CHILD}
+                            placeholder="请选择商品规格"
+                            onChange={value => this.handleGoodsSpecChange(value)}
+                          />
+                        )}
+                      </Form.Item>
+                      <Form.Item
+                        {...formItemLayout}
+                        label="规格单价库存"
+                      >
+                        {getFieldDecorator('goodsSku', {
+                          valuePropName: 'dataSource',
+                          initialValue: this.state.multSku ? specDataSource : [],
+                        })(
+                          <EditableTable
+                            size="small"
+                            columns={this.state.multSku ? specColumns : []}
+                            pagination={false}
+                          />
+                        )}
+                      </Form.Item>
+                      <Form.Item
+                        {...formItemLayout}
+                        label="推广栏目"
+                      >
+                        {getFieldDecorator('isRecommand', {
+                          valuePropName: 'checked',
+                          initialValue: goods && goods.isRecommand > 0,
+                          rules: [
+                            { required: false, message: '是否人气推荐！' },
+                          ],
+                        })(
+                          <Checkbox>人气推荐</Checkbox>
+                        )}
+                      </Form.Item>
+                      <Form.Item
+                        {...formItemLayoutNolabel}
+                      >
+                        {getFieldDecorator('isNew', {
+                          valuePropName: 'checked',
+                          initialValue: goods && goods.isNew > 0,
+                          rules: [
+                            { required: false, message: '是否新品首发！' },
+                          ],
+                        })(
+                          <Checkbox>新品首发</Checkbox>
+                        )}
+                      </Form.Item>
+                      <Form.Item
+                        {...formItemLayout}
+                        label="关键字"
+                      >
+                        {getFieldDecorator('keyword', {
+                          initialValue: keyword,
+                          rules: [
+                            { required: false, message: '请输入商品关键字！' },
+                          ],
+                        })(
+                          <Select
+                            mode="tags"
+                            style={{ width: '100%' }}
+                            tokenSeparators={[',']}
+                            tags
+                            placeholder="输入该商品的一些关键字，便于快速查找到该商品信息；回车键输入多个。"
+                          />
+                        )}
+                      </Form.Item>
+                      <Form.Item
+                        {...formItemLayout}
+                        label="详细描述"
+                      >
+                        <Editor
+                          // https://jpuri.github.io/react-draft-wysiwyg/#/docs
+                          localization={{ locale: 'zh' }}
+                          editorState={editorState}
+                          // toolbarClassName="toolbarClassName"
+                          // wrapperClassName="wrapperClassName"
+                          // editorClassName="editorClassName"
+                          // wrapperClassName="wysiwyg-wrapper"
+                          toolbar={{
+                            options: ['inline', 'blockType', 'fontSize', 'fontFamily', 'list', 'textAlign', 'colorPicker', 'link', 'embedded', 'emoji', 'image', 'remove', 'history'],
+                          }}
+                          onEditorStateChange={this.handleChange}
+                          editorStyle={{ height: 360, border: 1, borderStyle: 'solid', borderColor: '#ccc' }}
+                        />
+                      </Form.Item>
+                    </Card>
+                  </Form>
+                </div>
+              </PageHeaderLayout>
+              <FooterToolbar>
+                <Button type="default" htmlType="button" onClick={e => this.handleCancel(e)} >取消</Button>
+                <Button type="primary" htmlType="button" onClick={e => this.handleOK(e)} loading={loading} >保存</Button>
+              </FooterToolbar>
+            </div>
+          )
+        )
     );
   }
 }

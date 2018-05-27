@@ -16,7 +16,6 @@ class GoodsCard extends React.PureComponent {
     const { data, pagination } = this.props;
 
     const paginationProps = {
-      showSizeChanger: true,
       showQuickJumper: true,
       ...pagination,
     };
@@ -54,7 +53,7 @@ class GoodsCard extends React.PureComponent {
                       //   );
                       // }) : null
                       // 列表暂时取首图
-                      item.thumb ? (<div><img className={styles.card_img} src={`${globalConfig.imageUrl}${item.thumb[0]}`} alt="" /></div>) : null
+                      item.thumbs ? (<div><img className={styles.card_img} src={`${globalConfig.imageUrl}${item.thumbs[0]}`} alt="" /></div>) : null
                     }
                   </div>
                   <div className={styles.card_content}>
