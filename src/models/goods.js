@@ -9,8 +9,6 @@ export default {
       results: [],
       count: 0,
     },
-    // goods: undefined,
-    goodsImages: undefined,
     goods: undefined,
   },
 
@@ -69,35 +67,6 @@ export default {
     *trashGoods(_, { put }) {
       yield put({ type: 'emptyGoods' });
     },
-
-    // goodsImages
-    *fetchGoodsImage({ payload }, { call, put }) {
-      const respon = yield call(getGoodsImage, payload);
-      yield put({ type: 'queryGoodsImage', payload: respon });
-    },
-    *storeGoodsImage({ payload }, { call, put }) {
-      const res = yield call(postGoodsImage, payload);
-      if (res.error) {
-        message.error(`保存失败！${res.error}`, 5);
-      } else {
-        yield put({ type: 'appendGoodsImage', payload: { ...payload, ...res } });
-        // message.success('保存成功！', 3);
-      }
-    },
-    *removeGoodsImage({ payload }, { call, put }) {
-      const res = yield call(deleteGoodsImage, payload);
-      if (res.error) {
-        message.error(`删除失败！${res.error}`, 5);
-      } else {
-        yield put({ type: 'clearGoodsImage', payload: { ...payload } });
-        message.success('删除成功！', 3);
-      }
-    },
-
-    *trashGoodsImage(_, { put }) {
-      yield put({ type: 'emptyGoodsImage' });
-    },
-
   },
 
   reducers: {
@@ -140,39 +109,6 @@ export default {
       return ({
         ...state,
         goods: undefined,
-      });
-    },
-
-    // GoodsImage
-    queryGoodsImage(state, action) {
-      return {
-        ...state,
-        goodsImages: action.payload,
-      };
-    },
-    appendGoodsImage(state, action) {
-      return ({
-        ...state,
-        goodsImages: {
-          results: state.goodsImages.results.concat(action.payload),
-          count: state.data.count + 1,
-        },
-      });
-    },
-    clearGoodsImage(state, action) {
-      return ({
-        ...state,
-        GoodsImage: {
-          results: state.goodsImage.results.filter(item => item.objectId !== action.payload.objectId),
-          count: state.goodsImage.count - 1,
-        },
-      });
-    },
-
-    emptyGoodsImage(state) {
-      return ({
-        ...state,
-        goodsImages: undefined,
       });
     },
   },

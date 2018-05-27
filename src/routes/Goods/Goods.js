@@ -1,18 +1,19 @@
 /* eslint-disable prefer-destructuring */
 import React from 'react';
 import { connect } from 'dva';
-import { Route, Redirect, Link } from 'dva/router';
-import { Row, Col, Card, Input, Icon, InputNumber, Switch, Button, Form, Upload, Modal, TreeSelect, Radio, Checkbox, Tabs, Table, Select, Spin } from 'antd';
-import { EditorState, convertToRaw, ContentState } from 'draft-js';
+import _ from 'lodash';
+import { Link } from 'dva/router';
+import { Card, Input, InputNumber, Switch, Button, Form, TreeSelect, Radio, Checkbox, Select, Spin } from 'antd';
+import { EditorState } from 'draft-js';
 import { Editor } from 'react-draft-wysiwyg';
 import 'react-draft-wysiwyg/dist/react-draft-wysiwyg.css';
 import PageHeaderLayout from '../../layouts/PageHeaderLayout';
 import FooterToolbar from '../../components/FooterToolbar';
 import styles from './Goods.less';
 import globalConfig from '../../config';
+import Exception from '../../components/Exception';
 import EditableTable from '../../components/EditableTable';
 import UploadImage from '../../components/UploadImage';
-import Exception from 'components/Exception';
 
 const { TextArea } = Input;
 const RadioGroup = Radio.Group;
@@ -48,20 +49,10 @@ export default class Goods extends React.PureComponent {
         payload: {
           objectId,
         },
-      }).then(() => {
-        dispatch({
-          type: 'goods/fetchGoodsImage',
-          payload: {
-            where: { pointerGoods: { __type: 'Pointer', className: 'Goods', objectId } },
-          },
-        });
       });
     } else {
       dispatch({
         type: 'goods/trashGoods',
-      });
-      dispatch({
-        type: 'goods/trashGoodsImage',
       });
     }
 
@@ -98,12 +89,6 @@ export default class Goods extends React.PureComponent {
       this.setState({ adding: true });
     }
   }
-
-  // componentWillReceiveProps(nextProps) {
-  //   if (nextProps.goodsImages) {
-  //     this.setState({ fileList: nextProps.goodsImages.results });
-  //   }
-  // }
 
   componentWillUnmount() {
     const { dispatch } = this.props;
@@ -329,23 +314,16 @@ export default class Goods extends React.PureComponent {
     const { validateFields } = this.props.form;
     validateFields({ force: true }, (err, values) => {
       if (err === null || !err) {
-        let goods = values;
+        const goods = _.clone(values);
         const { dispatch } = this.props;
 
-        const objGoodsImage = [];
         const thumbs = [];
         goods.goodsImage.forEach((image) => {
-          const uid = image.uid;
           let name = image.name;
-          let url = image.url;
-          let thumb = image.thumb;
           if (image.response) {
-            url = image.response.url;
-            name = url.substr(url.lastIndexOf('/') + 1);
-            thumb = url.substr(url.lastIndexOf('/') + 1);
+            name = image.response.url.substr(image.response.url.lastIndexOf('/') + 1);
           }
           thumbs.push(name);
-          objGoodsImage.push({ uid, name, thumb, url });
         });
         delete goods.goodsImage;
         goods.thumbs = thumbs;
@@ -380,42 +358,12 @@ export default class Goods extends React.PureComponent {
           dispatch({
             type: 'goods/coverGoods',
             payload: goods,
-          }).then(() => {
-            // 保存图片
-            const pointerGoods = {
-              __type: 'Pointer',
-              className: 'Goods',
-              objectId: values.objectId,
-            };
-            objGoodsImage.forEach((image) => {
-              image = { ...image, pointerGoods };
-              dispatch({
-                type: 'goods/storeGoodsImage',
-                payload: image,
-              });
-            });
           });
         } else {
           // 添加商品
           dispatch({
             type: 'goods/storeGoods',
             payload: goods,
-          }).then(() => {
-            const { goods } = this.props.goods;
-            if (goods) {
-              const pointerGoods = {
-                __type: 'Pointer',
-                className: 'Goods',
-                objectId: goods.objectId,
-              };
-              objGoodsImage.forEach((image) => {
-                image = { ...image, pointerGoods };
-                dispatch({
-                  type: 'goods/storeGoodsImage',
-                  payload: image,
-                });
-              });
-            }
           });
         }
       }
@@ -429,7 +377,7 @@ export default class Goods extends React.PureComponent {
   render() {
     const { form, loading } = this.props;
     const { getFieldDecorator } = form;
-    const { goods, goodsImages } = this.props.goods;
+    const { goods } = this.props.goods;
     const { adding, editing, pointerCategory, multSku } = this.state;
 
     const categorys = this.Tree(this.props.category.category.results, 'pointerCategory');
@@ -440,10 +388,9 @@ export default class Goods extends React.PureComponent {
       error = true;
     }
 
-    // let { categorySpec } = this.state;
-    // if (!multSku) {
-    //   categorySpec = [];
-    // }
+    const goodsImages = goods && goods.thumbs ? goods.thumbs.map((i) => {
+      return { uid: i, name: i, thumb: i, url: `${globalConfig.imageUrl}${i}` };
+    }) : [];
 
     let { specColumns } = this.state;
     let { specDataSource } = this.state;
@@ -564,7 +511,7 @@ export default class Goods extends React.PureComponent {
                       >
                         {getFieldDecorator('goodsImage', {
                           valuePropName: 'fileList',
-                          initialValue: goodsImages && goodsImages.results ? goodsImages.results : [],
+                          initialValue: goodsImages,
                         })(
                           <UploadImage
                             listType="picture-card"
