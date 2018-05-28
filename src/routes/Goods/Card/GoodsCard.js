@@ -29,12 +29,6 @@ class GoodsCard extends React.PureComponent {
           dataSource={[...data]}
           pagination={paginationProps}
           renderItem={(item) => {
-            // const images = (thumb) => {
-            //   const res = thumb.map((i) => {
-            //     return (<div><img className={styles.card_img} src={`${globalConfig.imageUrl}${i.substr(i.indexOf('/') + 1)}`} alt="" /></div>);
-            //   });
-            //   return res;
-            // };
             return item ? (
               <List.Item key={item.objectId}>
                 <Card
@@ -61,9 +55,21 @@ class GoodsCard extends React.PureComponent {
                     <Ellipsis lines={1}>{item.title}</Ellipsis>
                   </div>
                   <div className={styles.card_footer}>
-                    <Tag color={item.categoryColor ? item.categoryColor : 'gold'}>分类</Tag>
+                    { item.pointerCategory && item.pointerCategory.name ? (<Tag color="green">{item.pointerCategory.name}</Tag>) : null}
+
                     <div className={styles.position}>
-                      <Icon type="shop" style={{ margin: 5 }} />店名
+                      {
+                        this.props.group && item.goodsGroup ?
+                          item.goodsGroup.map((i) => {
+                            const group = this.props.group.results.find(j => j.objectId === i);
+                            if (group) {
+                              return (<Tag color="magenta">{group.name}</Tag>);
+                            } else {
+                              return null;
+                            }
+                          }) :
+                          null
+                      }
                     </div>
                   </div>
                 </Card>

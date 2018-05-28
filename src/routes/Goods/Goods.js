@@ -90,46 +90,6 @@ export default class Goods extends React.PureComponent {
     }
   }
 
-  componentWillUnmount() {
-    const { dispatch } = this.props;
-    dispatch({
-      type: 'goods/trashGoods',
-    });
-    dispatch({
-      type: 'goods/trashGoodsImage',
-    });
-  }
-
-
-  // componentWillReceiveProps(nextProps) {
-  //   console.log(nextProps);
-  //   const { params } = nextProps.match;
-  //   const { dispatch } = this.props;
-  //
-  //   if (!this.state.params && params.objectId) {
-  //     this.setState({ params });
-  //     dispatch({
-  //       type: 'goods/fetchGoods',
-  //       payload: {
-  //         where: params,
-  //       },
-  //     });
-  //
-  //     dispatch({
-  //       type: 'goods/fetchGoodsImages',
-  //       payload: {
-  //         where: {
-  //           pointerGoods: {
-  //             __type: 'Pointer',
-  //             className: 'Goods',
-  //             objectId: params.objectId,
-  //           },
-  //         },
-  //       },
-  //     });
-  //   }
-  // }
-
   Tree = (data, parentKey = 'pointerCategory') => {
     const val = [];
     if (data) {
@@ -173,6 +133,10 @@ export default class Goods extends React.PureComponent {
   };
 
   handleCategoryChange = (value) => {
+    // 重选value = undefined
+    if (value === undefined) {
+      return;
+    }
     // 重新初始化
     this.props.form.resetFields(['goodsSpec', 'multSku', 'goodsSpec', 'goodsSku']);
 
@@ -215,7 +179,6 @@ export default class Goods extends React.PureComponent {
   };
 
   handleGoodsSpecChange = (value) => {
-
     const values = value.toString();
 
     // 过滤选择规格
@@ -299,14 +262,7 @@ export default class Goods extends React.PureComponent {
   };
 
   handleImageRemove = (file) => {
-    const { dispatch } = this.props;
-    const { goodsImages } = this.props.goods;
-    goodsImages.results.filter(i => i.uid === file.uid).forEach((j) => {
-      dispatch({
-        type: 'goods/removeGoodsImage',
-        payload: { objectId: j.objectId },
-      });
-    });
+    // Todo
   };
 
   handleOK = (e) => {
@@ -340,7 +296,7 @@ export default class Goods extends React.PureComponent {
         goods.pointerCategory = {
           __type: 'Pointer',
           className: 'Category',
-          objectId: goods.pointerCategory,
+          objectId: goods.pointerCategory ? goods.pointerCategory : '',
         };
 
         goods.isRecommand = goods.isRecommand ? 1 : 0;
@@ -358,12 +314,16 @@ export default class Goods extends React.PureComponent {
           dispatch({
             type: 'goods/coverGoods',
             payload: goods,
+          }).then(() => {
+            this.props.history.goBack();
           });
         } else {
           // 添加商品
           dispatch({
             type: 'goods/storeGoods',
             payload: goods,
+          }).then(() => {
+            this.props.history.goBack();
           });
         }
       }

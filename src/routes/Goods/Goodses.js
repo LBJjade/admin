@@ -1,16 +1,16 @@
 import React from 'react';
 import { connect } from 'dva';
 import { Link, routerRedux } from 'dva/router';
-import PropTypes from 'prop-types';
+// import PropTypes from 'prop-types';
 import { Row, Icon, Card } from 'antd';
 import PageHeaderLayout from '../../layouts/PageHeaderLayout';
 import HeaderSearch from '../../components/HeaderSearch';
-// import ImageCard from './Card/ImageCard';
 import GoodsCard from './Card/GoodsCard';
 import styles from './Goodses.less';
 
-@connect(({ goods }) => ({
+@connect(({ goods, group }) => ({
   goods,
+  group,
 }))
 export default class Goodses extends React.Component {
   state = {
@@ -26,25 +26,24 @@ export default class Goodses extends React.Component {
         count: true,
         limit: this.state.limit,
         skip: this.state.skip,
+        include: 'pointerCategory',
+      },
+    });
+
+    dispatch({
+      type: 'group/fetchGroup',
+      payload: {
+        count: true,
       },
     });
   }
 
   handleClick = (item) => {
-    // const { dispatch } = this.props;
-    // const url = '/goods/goods';
-    // dispatch(routerRedux.push({
-    //   pathname: url,
-    //   state: {
-    //     objectId: item.objectId,
-    //   },
-    // }));
     const { dispatch } = this.props;
     dispatch(routerRedux.push(`/goods/goods?${item.objectId}`));
   };
 
   handlePageChange = (page) => {
-    // console.log(page);
     const skip = (page - 1) * this.state.limit;
     const { dispatch } = this.props;
     dispatch({
@@ -88,6 +87,7 @@ export default class Goodses extends React.Component {
                 pageSize: this.state.limit,
                 total: goodses.count,
               }}
+              group={this.props.group.group}
             />
           </Row>
         </div>
