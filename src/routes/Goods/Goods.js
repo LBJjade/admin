@@ -29,13 +29,8 @@ const RadioGroup = Radio.Group;
 @Form.create()
 export default class Goods extends React.PureComponent {
   state = {
-    pointerCategory: '',
-    categorySpec: [],
-    adding: false,
     editing: false,
     editorState: EditorState.createEmpty(),
-    fileList: [],
-    goods: undefined,
   };
 
   componentDidMount() {
@@ -78,15 +73,10 @@ export default class Goods extends React.PureComponent {
     });
   }
 
-  componentWillReceiveProps(nextProps) {
-    if (nextProps.goods.goods) {
-      this.setState({ goods: nextProps.goods.goods });
-    }
+  componentWillReceiveProps() {
     const { search } = this.props.location;
     if (search) {
       this.setState({ editing: true });
-    } else {
-      this.setState({ adding: true });
     }
   }
 
@@ -140,17 +130,10 @@ export default class Goods extends React.PureComponent {
     // 重新初始化
     this.props.form.resetFields(['goodsSpec', 'multSku', 'goodsSpec', 'goodsSku']);
 
-    this.setState({
-      pointerCategory: value,
-    });
-
     // 选取类目规格规格：优先本类目规格，再父级类目规格
     const category = this.props.category.category.results.find(i => i.objectId === value);
 
     if (category.categorySpec && category.categorySpec.length) {
-      this.setState({
-        categorySpec: category.categorySpec,
-      });
       this.handleGoodsSpecChange(category.categorySpec);
       return;
     }
@@ -158,17 +141,9 @@ export default class Goods extends React.PureComponent {
     if (category && category.pointerCategory) {
       const categoryParent = this.props.category.category.results.find(i => i.objectId === category.pointerCategory.objectId);
       if (categoryParent && categoryParent.categorySpec) {
-        this.setState({
-          categorySpec: categoryParent.categorySpec,
-        });
         this.handleGoodsSpecChange(categoryParent.categorySpec);
-        return;
       }
     }
-
-    this.setState({
-      categorySpec: [],
-    });
   };
 
   handleMultSkuChange = (e) => {
@@ -261,10 +236,6 @@ export default class Goods extends React.PureComponent {
     });
   };
 
-  handleImageRemove = (file) => {
-    // Todo
-  };
-
   handleOK = (e) => {
     e.preventDefault();
     const { validateFields } = this.props.form;
@@ -338,7 +309,7 @@ export default class Goods extends React.PureComponent {
     const { form, loading } = this.props;
     const { getFieldDecorator } = form;
     const { goods } = this.props.goods;
-    const { adding, editing, pointerCategory, multSku } = this.state;
+    const { editing, multSku } = this.state;
 
     const categorys = this.Tree(this.props.category.category.results, 'pointerCategory');
     const specs = this.Tree(this.props.spec.spec.results, 'pointerSpec');
@@ -476,7 +447,6 @@ export default class Goods extends React.PureComponent {
                           <UploadImage
                             listType="picture-card"
                             onSuccess={this.handleImageSuccess}
-                            onRemove={this.handleImageRemove}
                           />
                         )}
                       </Form.Item>
@@ -686,7 +656,7 @@ export default class Goods extends React.PureComponent {
                           ],
                         })(
                           <TreeSelect
-                            treeData={this.state.multSku ? specs : []}
+                            treeData={multSku ? specs : []}
                             treeCheckable
                             showCheckedStrategy={TreeSelect.SHOW_CHILD}
                             placeholder="请选择商品规格"

@@ -56,7 +56,8 @@
     "require-yield": [1],
     "compat/compat": "error",
     "max-len": [1],
-    "no-plusplus": [1]
+    "no-plusplus": [1],
+    "no-param-reassign": [1]
   },
   "parserOptions": {
     "ecmaFeatures": {
