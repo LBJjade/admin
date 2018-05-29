@@ -1,5 +1,5 @@
 import React from 'react';
-import { Card, Icon, Tag, List, Button, Carousel } from 'antd';
+import { Card, Tag, List } from 'antd';
 import styles from './GoodsCard.less';
 import globalConfig from '../../../config';
 import Ellipsis from '../../../components/Ellipsis';

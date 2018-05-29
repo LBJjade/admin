@@ -1,15 +1,6 @@
 import React from 'react';
-import { Table, Input, InputNumber, message, Divider, Popconfirm } from 'antd';
+import { Table, Input, InputNumber, Divider, Popconfirm } from 'antd';
 import styles from './index.less';
-
-/* column format
-columns = [{
-  title: i.name,
-  dataIndex: i.objectId,
-  key: i.objectId,
-  editable: true,
-}];
-*/
 
 class EditableTable extends React.PureComponent {
   state={
