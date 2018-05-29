@@ -76,7 +76,7 @@ export async function postUserAuth(params) {
 }
 
 export async function getAddress(params) {
-  return request(`/api/classes/Address?${stringify(params)}`, {
+  return request(`/api/classes/Address${requestParams2Url(params)}`, {
     method: 'GET',
   });
 }
