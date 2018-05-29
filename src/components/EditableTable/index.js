@@ -1,5 +1,5 @@
 import React from 'react';
-import { Table, Input, message, Divider, Popconfirm } from 'antd';
+import { Table, Input, InputNumber, message, Divider, Popconfirm } from 'antd';
 import styles from './index.less';
 
 /* column format
@@ -135,14 +135,25 @@ class EditableTable extends React.PureComponent {
       columns.map((col) => {
         col.render = (text, record) => {
           if (record.editable && col.editable) {
-            return (
-              <Input
-                style={{ width: 50 }}
-                value={text}
-                onChange={e => this.handleFieldChange(e, col.dataIndex, record.key)}
-                onKeyPress={e => this.handleKeyPress(e, record)}
-              />
-            );
+            if (col.type === 'number') {
+              return (
+                <InputNumber
+                  style={{ width: 50 }}
+                  value={text}
+                  onChange={e => this.handleFieldChange(e, col.dataIndex, record.key)}
+                  onKeyPress={e => this.handleKeyPress(e, record)}
+                />
+              );
+            } else {
+              return (
+                <Input
+                  style={{ width: 50 }}
+                  value={text}
+                  onChange={e => this.handleFieldChange(e, col.dataIndex, record.key)}
+                  onKeyPress={e => this.handleKeyPress(e, record)}
+                />
+              );
+            }
           }
           return text;
         };

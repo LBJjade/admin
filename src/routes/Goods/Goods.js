@@ -3,7 +3,7 @@ import React from 'react';
 import { connect } from 'dva';
 import _ from 'lodash';
 import { Link } from 'dva/router';
-import { Card, Input, InputNumber, Switch, Button, Form, TreeSelect, Radio, Checkbox, Select, Spin } from 'antd';
+import { Card, Input, InputNumber, Switch, Button, Form, TreeSelect, Radio, Checkbox, Select, Spin, Icon, Row } from 'antd';
 import { EditorState } from 'draft-js';
 import { Editor } from 'react-draft-wysiwyg';
 import 'react-draft-wysiwyg/dist/react-draft-wysiwyg.css';
@@ -32,6 +32,8 @@ export default class Goods extends React.PureComponent {
     editing: false,
     editorState: EditorState.createEmpty(),
     price: 0,
+    weight: 0,
+    stock: 0,
   };
 
   componentWillMount() {
@@ -44,6 +46,18 @@ export default class Goods extends React.PureComponent {
         type: 'goods/fetchGoods',
         payload: {
           objectId,
+        },
+      });
+      dispatch({
+        type: 'goods/fetchGoodsSku',
+        payload: {
+          where: {
+            pointerGoods: {
+              __type: 'Pointer',
+              className: 'Goods',
+              objectId,
+            },
+          },
         },
       });
     } else {
@@ -78,12 +92,38 @@ export default class Goods extends React.PureComponent {
     if (nextProps.goods.goods !== this.props.goods.goods) {
       const { goods } = nextProps.goods;
       this.setState({ price: goods && goods.price ? goods.price : 0 });
+      this.setState({ weight: goods && goods.weight ? goods.weight : 0 });
+      this.setState({ stock: goods && goods.stock ? goods.stock : 0 });
 
+      // // 组织goodsSku数据结构
+      // const goodsSkuColumns = [];
+      // if (goods && goods.goodsSku && goods.goodsSku.length > 0) {
+      //   const goodsSkuItem = goods.goodsSku[0];
+      //   const skuName = goodsSkuItem.skuName.split(',');
+      //   skuName.forEach((item, index) => {
+      //     const col = {
+      //       title: item.split(':')[0],
+      //       dataIndex: `spec_${index}`,
+      //       key: `spec_${index}`,
+      //     };
+      //     goodsSkuColumns.push(col);
+      //   });
+      //   goodsSkuColumns.push({ title: '单价', dataIndex: 'price', key: 'price', editable: true });
+      //   goodsSkuColumns.push({ title: '重量', dataIndex: 'weight', key: 'weight', editable: true });
+      //   goodsSkuColumns.push({ title: '库存', dataIndex: 'stock', key: 'stock', editable: true });
+      //   goodsSkuColumns.push({ title: '条码', dataIndex: 'barCode', key: 'barCode', editable: true });
+      //
+      //   this.setState({ specColumns: goodsSkuColumns });
+      //   this.setState({ specDataSource: goods.goodsSku });
+      // }
+    }
+    if (nextProps.goods.goodsSku !== this.props.goods.goodsSku) {
+      // this.setState({ goodsSku: nextProps.goods.goodsSku });
 
       // 组织goodsSku数据结构
       const goodsSkuColumns = [];
-      if (goods && goods.goodsSku && goods.goodsSku.length > 0) {
-        const goodsSkuItem = goods.goodsSku[0];
+      if (nextProps.goods.goodsSku.results.length > 0) {
+        const goodsSkuItem = nextProps.goods.goodsSku.results[0];
         const skuName = goodsSkuItem.skuName.split(',');
         skuName.forEach((item, index) => {
           const col = {
@@ -93,12 +133,13 @@ export default class Goods extends React.PureComponent {
           };
           goodsSkuColumns.push(col);
         });
-        goodsSkuColumns.push({ title: '单价', dataIndex: 'price', key: 'price', editable: true });
-        goodsSkuColumns.push({ title: '库存', dataIndex: 'stock', key: 'stock', editable: true });
+        goodsSkuColumns.push({ title: '单价', dataIndex: 'price', key: 'price', editable: true, type: 'number' });
+        goodsSkuColumns.push({ title: '重量', dataIndex: 'weight', key: 'weight', editable: true, type: 'number' });
+        goodsSkuColumns.push({ title: '库存', dataIndex: 'stock', key: 'stock', editable: true, type: 'number' });
         goodsSkuColumns.push({ title: '条码', dataIndex: 'barCode', key: 'barCode', editable: true });
 
         this.setState({ specColumns: goodsSkuColumns });
-        this.setState({ specDataSource: goods.goodsSku });
+        this.setState({ specDataSource: nextProps.goods.goodsSku.results });
       }
     }
 
@@ -156,7 +197,7 @@ export default class Goods extends React.PureComponent {
       return;
     }
     // 重新初始化
-    this.props.form.resetFields(['goodsSpec', 'multSku', 'goodsSpec', 'goodsSku']);
+    this.props.form.resetFields(['goodsSpec', 'goodsSpec', 'goodsSku']);
 
     // 选取类目规格规格：优先本类目规格，再父级类目规格
     const category = this.props.category.category.results.find(i => i.objectId === value);
@@ -172,13 +213,6 @@ export default class Goods extends React.PureComponent {
         this.handleGoodsSpecChange(categoryParent.categorySpec);
       }
     }
-  };
-
-  handleMultSkuChange = (e) => {
-    this.props.form.resetFields(['goodsSpec', 'goodsSku']);
-    this.setState({
-      multSku: e.target.checked,
-    });
   };
 
   handleGoodsSpecChange = (value) => {
@@ -256,11 +290,19 @@ export default class Goods extends React.PureComponent {
         title: '单价',
         key: 'price',
         editable: true,
+        type: 'number',
+      }, {
+        dataIndex: 'weight',
+        title: '重量',
+        key: 'weight',
+        editable: true,
+        type: 'number',
       }, {
         dataIndex: 'stock',
         title: '库存',
         key: 'stock',
         editable: true,
+        type: 'number',
       }, {
         dataIndex: 'barCode',
         title: '条码',
@@ -273,9 +315,9 @@ export default class Goods extends React.PureComponent {
       specColumns = specColumns.concat(specColumnsExtra);
     }
 
-    const { price } = this.state;
+    const { price, weight, stock } = this.state;
     if (specDataSource && specDataSource.length) {
-      specDataSource = specDataSource.map(i => ({ ...i, price, stock: 1, barCode: '' }));
+      specDataSource = specDataSource.map(i => ({ ...i, price, weight, stock, barCode: '' }));
     }
 
     this.setState({
@@ -303,6 +345,14 @@ export default class Goods extends React.PureComponent {
 
   handlePriceChange = (e) => {
     this.setState({ price: e.length <= 0 ? 0 : e });
+  };
+
+  handleWeightChange = (e) => {
+    this.setState({ weight: e.length <= 0 ? 0 : e });
+  };
+
+  handleStockChange = (e) => {
+    this.setState({ stock: e.length <= 0 ? 0 : e });
   };
 
   handleOK = (e) => {
@@ -349,12 +399,58 @@ export default class Goods extends React.PureComponent {
           goods.keyword = values.keyword.toString();
         }
 
+        delete goods.goodsSku;
+
         // 修改商品
         if (values.objectId) {
           dispatch({
             type: 'goods/coverGoods',
             payload: goods,
           }).then(() => {
+            // GoodsSku
+            let oldGoodsSku = _.clone(this.props.goods.goodsSku.results); // 获取原来GoodsSku
+
+            values.goodsSku.forEach((sku, index) => {
+              const obj = _.clone(sku);
+              // 删除控件附带的属性
+              delete obj.isNew;
+              delete obj.editable;
+              delete obj.createdAt;
+              delete obj.updatedAt;
+
+              if (obj.objectId) {
+                oldGoodsSku = oldGoodsSku.filter(i => i.objectId !== obj.objectId);
+              }
+
+              // GoodsSku有objectId的修改，无objectId的新增
+              dispatch({
+                type: obj.objectId ? 'goods/coverGoodsSku' : 'goods/storeGoodsSku',
+                payload: {
+                  ...obj,
+                  order: index,
+                  pointerGoods: {
+                    __type: 'Pointer',
+                    className: 'Goods',
+                    objectId: values.objectId,
+                  },
+                },
+              });
+            });
+
+            // 清除被删除的GoodsSku
+            if (oldGoodsSku.length > 0) {
+              oldGoodsSku.forEach((sku) => {
+                if (sku.objectId) {
+                  dispatch({
+                    type: 'goods/removeGoodsSku',
+                    payload: {
+                      objectId: sku.objectId,
+                    },
+                  });
+                }
+              });
+            }
+
             this.props.history.goBack();
           });
         } else {
@@ -363,7 +459,29 @@ export default class Goods extends React.PureComponent {
             type: 'goods/storeGoods',
             payload: goods,
           }).then(() => {
-            this.props.history.goBack();
+            const objectId = this.props.goods.goods.objectId;
+            if (objectId) {
+              goods.goodsSku.forEach((sku, index) => {
+                const obj = _.clone(sku);
+                // 删除控件附带的属性
+                delete obj.isNew;
+                delete obj.editable;
+                dispatch({
+                  type: 'goods/storeGoodsSku',
+                  payload: {
+                    ...obj,
+                    order: index,
+                    pointerGoods: {
+                      __type: 'Pointer',
+                      className: 'Goods',
+                      objectId,
+                    },
+                  },
+                });
+              });
+
+              this.props.history.goBack();
+            }
           });
         }
       }
@@ -378,7 +496,7 @@ export default class Goods extends React.PureComponent {
     const { form, loading } = this.props;
     const { getFieldDecorator } = form;
     const { goods } = this.props.goods;
-    const { editing, multSku, price } = this.state;
+    const { editing } = this.state;
 
     const categorys = this.Tree(this.props.category.category.results, 'pointerCategory');
     const specs = this.Tree(this.props.spec.spec.results, 'pointerSpec');
@@ -392,8 +510,8 @@ export default class Goods extends React.PureComponent {
       return { uid: i, name: i, thumb: i, url: `${globalConfig.imageUrl}${i}` };
     }) : [];
 
-    let { specColumns } = this.state;
-    let { specDataSource } = this.state;
+    const { specColumns } = this.state;
+    const { specDataSource } = this.state;
 
     // const groups = this.Tree(this.props.group.group.results, 'pointerGroup');
     const groups = this.props.group.group.results.map((item) => {
@@ -418,33 +536,6 @@ export default class Goods extends React.PureComponent {
 
     const { editorState } = this.state;
 
-    // const specColumnsExtra = [
-    //   {
-    //     dataIndex: 'price',
-    //     title: '单价',
-    //     key: 'price',
-    //     editable: true,
-    //   }, {
-    //     dataIndex: 'stock',
-    //     title: '库存',
-    //     key: 'stock',
-    //     editable: true,
-    //   }, {
-    //     dataIndex: 'barCode',
-    //     title: '条码',
-    //     key: 'barCode',
-    //     editable: true,
-    //   },
-    // ];
-    //
-    // if (specColumns && specColumns.length) {
-    //   specColumns = specColumns.concat(specColumnsExtra);
-    // }
-    //
-    // if (specDataSource && specDataSource.length) {
-    //   specDataSource = specDataSource.map(i => ({ ...i, price, stock: 1, barCode: '' }));
-    // }
-
     let keyword = goods && goods.keyword ? goods.keyword || '' : '';
     // keyword 兼容老数据
     // 全局逗号置换空格
@@ -465,7 +556,7 @@ export default class Goods extends React.PureComponent {
       },
       wrapperCol: {
         xs: { span: 24 },
-        sm: { span: 16 },
+        sm: { span: 18 },
       },
     };
 
@@ -587,6 +678,39 @@ export default class Goods extends React.PureComponent {
                             formatter={value => `¥ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
                             parser={value => value.replace(/\¥\s?|(,*)/g, '')}
                             onChange={this.handlePriceChange}
+                            min={0}
+                          />
+                        )}
+                      </Form.Item>
+                      <Form.Item
+                        {...formItemLayout}
+                        label="重量"
+                      >
+                        {getFieldDecorator('weight', {
+                          initialValue: goods ? goods.weight || 0 : 0,
+                          rules: [
+                            { required: false, message: '请输入单件商品重量！' },
+                          ],
+                        })(
+                          <InputNumber
+                            min={0}
+                            onChange={this.handleWeightChange}
+                          />
+                        )}
+                      </Form.Item>
+                      <Form.Item
+                        {...formItemLayout}
+                        label="库存"
+                      >
+                        {getFieldDecorator('stock', {
+                          initialValue: goods ? goods.stock || 0 : 0,
+                          rules: [
+                            { required: false, message: '请输入商品库存数量！' },
+                          ],
+                        })(
+                          <InputNumber
+                            min={0}
+                            onChange={this.handleStockChange}
                           />
                         )}
                       </Form.Item>
@@ -639,7 +763,7 @@ export default class Goods extends React.PureComponent {
                         label="减库存方式"
                       >
                         {getFieldDecorator('stockCnf', {
-                          initialValue: goods ? goods.stockCnf || 1 : 1,
+                          initialValue: goods ? goods.stockCnf || 0 : 1,
                           rules: [
                             { required: false, message: '请选择减库存方式！' },
                           ],
@@ -652,10 +776,10 @@ export default class Goods extends React.PureComponent {
                       </Form.Item>
                       <Form.Item
                         {...formItemLayout}
-                        label="零库存"
+                        label="零库存调整上下架"
                       >
                         {getFieldDecorator('zeroStock', {
-                          initialValue: goods ? goods.zeroStock || 1 : 1,
+                          initialValue: goods ? goods.zeroStock || 0 : 1,
                           rules: [
                             { required: false, message: '选择零库存影响上下架方式！' },
                           ],
@@ -711,7 +835,7 @@ export default class Goods extends React.PureComponent {
                             { required: false, message: '请选择商品是否多规格！' },
                           ],
                         })(
-                          <Checkbox onChange={e => this.handleMultSkuChange(e)} >是否多规格</Checkbox>
+                          <Checkbox >是否多规格</Checkbox>
                         )}
                       </Form.Item>
                       <Form.Item

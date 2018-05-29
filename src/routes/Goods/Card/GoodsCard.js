@@ -29,7 +29,7 @@ class GoodsCard extends React.PureComponent {
           dataSource={[...data]}
           pagination={paginationProps}
           renderItem={(item) => {
-            return item ? (
+            return (
               <List.Item key={item.objectId}>
                 <Card
                   bordered={false}
@@ -72,17 +72,6 @@ class GoodsCard extends React.PureComponent {
                       }
                     </div>
                   </div>
-                </Card>
-              </List.Item>
-            ) : (
-              <List.Item>
-                <Card
-                  bordered={false}
-                  hoverable
-                >
-                  <Button type="dashed">
-                    <Icon type="plus" /> 新增产品
-                  </Button>
                 </Card>
               </List.Item>
             );

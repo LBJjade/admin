@@ -177,6 +177,16 @@ export async function postGoodsSku(params) {
   });
 }
 
+export async function putGoodsSku(params) {
+  const param = _.clone(params);
+  const { objectId } = param;
+  delete param.objectId;
+  return request(`/api/classes/GoodsSku/${objectId}`, {
+    method: 'PUT',
+    body: param,
+  });
+}
+
 export async function deleteGoodsSku(params) {
   return request(`/api/classes/GoodsSku/${params.objectId}`, {
     method: 'DELETE',

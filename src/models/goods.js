@@ -1,5 +1,5 @@
 import { message } from 'antd';
-import { getGoodses, getGoods, postGoods, putGoods, deleteGoods, getGoodsSku } from '../services/goods';
+import { getGoodses, getGoods, postGoods, putGoods, deleteGoods, getGoodsSku, postGoodsSku, deleteGoodsSku, putGoodsSku } from '../services/goods';
 
 export default {
   namespace: 'goods',
@@ -10,7 +10,10 @@ export default {
       count: 0,
     },
     goods: undefined,
-    goodsSku: [],
+    goodsSku: {
+      results: [],
+      count: 0,
+    },
   },
 
   effects: {
@@ -74,6 +77,37 @@ export default {
       const respon = yield call(getGoodsSku, payload);
       yield put({ type: 'queryGoodsSku', payload: respon });
     },
+    *storeGoodsSku({ payload }, { call, put }) {
+      const res = yield call(postGoodsSku, payload);
+      if (res.error) {
+        message.error(`保存失败！${res.error}`, 5);
+      } else {
+        yield put({ type: 'appendGoodsSku', payload: { ...payload, ...res } });
+        // message.success('保存成功！', 3);
+      }
+    },
+    *coverGoodsSku({ payload }, { call, put }) {
+      const res = yield call(putGoodsSku, payload);
+      if (res.error) {
+        message.error(`保存失败！${res.error}`, 5);
+      } else {
+        yield put({ type: 'resetGoodsSku', payload: { ...payload, ...res }});
+        // message.success('保存成功！', 3);
+      }
+    },
+    *removeGoodsSku({ payload }, { call, put }) {
+      const res = yield call(deleteGoodsSku, payload);
+      if (res.error) {
+        message.error(`删除失败！${res.error}`, 5);
+      } else {
+        yield put({ type: 'clearGoodsSku', payload: { ...payload } });
+        // message.success('删除成功！', 3);
+      }
+    },
+    *trashGoodsSku(_, { put }) {
+      yield put({ type: 'emptyGoodsSku' });
+    },
+
 
   },
 
@@ -126,6 +160,47 @@ export default {
         ...state,
         goodsSku: action.payload,
       };
+    },
+    appendGoodsSku(state, action) {
+      return ({
+        ...state,
+        goodsSku: {
+          results: state.goodsSku.results.concat(action.payload),
+          count: state.data.count + 1,
+        },
+      });
+    },
+    resetGoodsSku(state, action) {
+      return ({
+        ...state,
+        GoodsSku: {
+          results: state.goodsSku.results.map((item) => {
+            if (item.objectId === action.payload.objectId) {
+              return { ...item, ...action.payload };
+            } else {
+              return item;
+            }
+          }),
+        },
+      });
+    },
+    clearGoodsSku(state, action) {
+      return ({
+        ...state,
+        goodsSku: {
+          results: state.goodsSku.results.filter(item => item.objectId !== action.payload.objectId),
+          count: state.goodsSku.count - 1,
+        },
+      });
+    },
+    emptyGoodsSku(state) {
+      return ({
+        ...state,
+        goodsSku: {
+          results: [],
+          count: 0,
+        },
+      });
     },
   },
 };
