@@ -47,7 +47,7 @@ class GoodsCard extends React.PureComponent {
                       //   );
                       // }) : null
                       // 列表暂时取首图
-                      item.thumbs ? (<div><img className={styles.card_img} src={`${globalConfig.imageUrl}${item.thumbs[0]}`} alt="" /></div>) : null
+                      item.thumbs && item.thumbs.length > 0 ? (<div><img className={styles.card_img} src={`${globalConfig.imageUrl}${item.thumbs[0]}`} alt="" /></div>) : null
                     }
                   </div>
                   <div className={styles.card_content}>
@@ -63,7 +63,8 @@ class GoodsCard extends React.PureComponent {
                           item.goodsGroup.map((i) => {
                             const group = this.props.group.results.find(j => j.objectId === i);
                             if (group) {
-                              return (<Tag color="magenta">{group.name}</Tag>);
+                              // 多个Tag需要加key区分;
+                              return (<Tag color="magenta" key={group.objectId}>{group.name}</Tag>);
                             } else {
                               return null;
                             }
