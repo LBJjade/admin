@@ -32,7 +32,13 @@ export default class BasicForms extends PureComponent {
     dispatch({
       type: 'account/fetchAddress',
       payload: {
-        include: 'pointerUser',
+        where: {
+          pointerUser: {
+            __type: 'Pointer',
+            className: '_User',
+            objectId: this.props.match.params.id,
+          },
+        },
       },
     });
   }
@@ -121,100 +127,104 @@ export default class BasicForms extends PureComponent {
             <Collapse defaultActiveKey={['1']}>
               <Panel header={<span style={{ fontWeight: 600 }}>收货地址</span>} key="1" >
                 <p>
-                  <List
-                    dataSource={address.results}
-                    renderItem={item => (
-                      (
-                        <div>
-                          {item.isDefault === true ? (
-                            <div style={{ marginBottom: 16 }}>
-                              <Collapse defaultActiveKey={['1']}>
-                                <Panel header={<span style={{ fontWeight: 600 }}>收货地址 <Tag color="red">默认</Tag></span>} key="1" >
-                                  <p>
-                                    <div>
-                                      <div style={{ fontWeight: 450 }}>
-                                        <Icon type="environment-o" />{item.province} {item.city} {item.area}
-                                      </div>
-                                      <div style={{ fontWeight: 450 }}>{item.address === undefined ? '' : item.address}</div>
-                                      <br />
-                                    </div>
-                                    <div>
-                                      {item.pointerUser === undefined || item.pointerUser.username === undefined ? '' : (
+                  {address.results === undefined || address.results.length === 0 ? (<div style={{ textAlign: 'center' }}>暂无数据</div>) : (
+                    <div>
+                      <List
+                        dataSource={address.results}
+                        renderItem={item => (
+                          (
+                            <div>
+                              {item.isDefault === true ? (
+                                <div style={{ marginBottom: 16 }}>
+                                  <Collapse defaultActiveKey={['1']}>
+                                    <Panel header={<span style={{ fontWeight: 600 }}>默认地址 <Tag color="red">默认</Tag></span>} key="1" >
+                                      <p>
                                         <div>
-                                          <div style={{ fontWeight: 600 }}><Icon type="user" />收货人</div>
                                           <div style={{ fontWeight: 450 }}>
-                                            {item.pointerUser.username}
+                                            <Icon type="environment-o" />{item.province === undefined ? '' : item.province} {item.city === undefined ? '' : item.city} {item.area === undefined ? '' : item.area}
                                           </div>
+                                          <div style={{ fontWeight: 450 }}>{item.address === undefined ? '' : item.address}</div>
+                                          <br />
                                         </div>
-                                      )}
-                                      <br />
-                                    </div>
-                                    <div>
-                                      {item.pointerUser === undefined || item.pointerUser.phone === undefined ? '' : (
                                         <div>
-                                          <div style={{ fontWeight: 600 }}><Icon type="mobile" />收货人电话</div>
-                                          <div style={{ fontWeight: 450 }}>
-                                            {item.pointerUser.phone}
-                                          </div>
+                                          {item.realName === undefined ? '' : (
+                                            <div>
+                                              <div style={{ fontWeight: 600 }}><Icon type="user" />收货人</div>
+                                              <div style={{ fontWeight: 450 }}>
+                                                {item.realName}
+                                              </div>
+                                            </div>
+                                          )}
+                                          <br />
                                         </div>
-                                      )}
-                                      <br />
-                                    </div>
-                                  </p>
-                                </Panel>
-                              </Collapse>
+                                        <div>
+                                          {item.mobile === undefined ? '' : (
+                                            <div>
+                                              <div style={{ fontWeight: 600 }}><Icon type="mobile" />收货人电话</div>
+                                              <div style={{ fontWeight: 450 }}>
+                                                {item.mobile}
+                                              </div>
+                                            </div>
+                                          )}
+                                          <br />
+                                        </div>
+                                      </p>
+                                    </Panel>
+                                  </Collapse>
+                                </div>
+                              ) : ''}
                             </div>
-                          ) : ''}
-                        </div>
-                      ))}
-                  />
-                  <List
-                    dataSource={address.results}
-                    renderItem={item => (
-                        (
-                          <div>
-                            {item.isDefault === false ? (
-                              <div style={{ marginBottom: 16 }}>
-                                <Collapse defaultActiveKey={['1']}>
-                                  <Panel header={<span style={{ fontWeight: 600 }}>收货地址</span>} key="1" >
-                                    <p>
-                                      <div>
-                                        <div style={{ fontWeight: 450 }}>
-                                          <Icon type="environment-o" />{item.province} {item.city} {item.area}
+                          ))}
+                      />
+                      <List
+                        dataSource={address.results}
+                        renderItem={item => (
+                          (
+                            <div>
+                              {item.isDefault === false ? (
+                                <div style={{ marginBottom: 16 }}>
+                                  <Collapse defaultActiveKey={['1']}>
+                                    <Panel header={<span style={{ fontWeight: 600 }}>其他地址</span>} key="1" >
+                                      <p>
+                                        <div>
+                                          <div style={{ fontWeight: 450 }}>
+                                            <Icon type="environment-o" />{item.province === undefined ? '' : item.province} {item.city === undefined ? '' : item.city} {item.area === undefined ? '' : item.area}
+                                          </div>
+                                          <div style={{ fontWeight: 450 }}>{item.address === undefined ? '' : item.address}</div>
+                                          <br />
                                         </div>
-                                        <div style={{ fontWeight: 450 }}>{item.address === undefined ? '' : item.address}</div>
-                                        <br />
-                                      </div>
-                                      <div>
-                                        {item.pointerUser === undefined || item.pointerUser.username === undefined ? '' : (
-                                          <div>
-                                            <div style={{ fontWeight: 600 }}><Icon type="user" />收货人</div>
-                                            <div style={{ fontWeight: 450 }}>
-                                              {item.pointerUser.username}
+                                        <div>
+                                          {item.realName === undefined ? '' : (
+                                            <div>
+                                              <div style={{ fontWeight: 600 }}><Icon type="user" />收货人</div>
+                                              <div style={{ fontWeight: 450 }}>
+                                                {item.realName}
+                                              </div>
                                             </div>
-                                          </div>
-                                        )}
-                                        <br />
-                                      </div>
-                                      <div>
-                                        {item.pointerUser === undefined || item.pointerUser.phone === undefined ? '' : (
-                                          <div>
-                                            <div style={{ fontWeight: 600 }}><Icon type="mobile" />收货人电话</div>
-                                            <div style={{ fontWeight: 450 }}>
-                                              {item.pointerUser.phone}
+                                          )}
+                                          <br />
+                                        </div>
+                                        <div>
+                                          {item.mobile === undefined ? '' : (
+                                            <div>
+                                              <div style={{ fontWeight: 600 }}><Icon type="mobile" />收货人电话</div>
+                                              <div style={{ fontWeight: 450 }}>
+                                                {item.mobile}
+                                              </div>
                                             </div>
-                                          </div>
-                                        )}
-                                        <br />
-                                      </div>
-                                    </p>
-                                  </Panel>
-                                </Collapse>
-                              </div>
-                            ) : ''}
-                          </div>
-                        ))}
-                  />
+                                          )}
+                                          <br />
+                                        </div>
+                                      </p>
+                                    </Panel>
+                                  </Collapse>
+                                </div>
+                              ) : ''}
+                            </div>
+                          ))}
+                      />
+                    </div>
+                  )}
                 </p>
               </Panel>
             </Collapse>
