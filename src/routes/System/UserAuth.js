@@ -3,7 +3,7 @@ import React, { PureComponent } from 'react';
 import moment from 'moment';
 import { connect } from 'dva';
 import { Link, routerRedux } from 'dva/router';
-import { Form, Input, Button, Card, Tag, Tooltip, Row, Col, Select, List, Icon, Collapse } from 'antd';
+import { Form, Input, Button, Tag, Tooltip, Row, Col, Select, List, Icon, Collapse } from 'antd';
 import PageHeaderLayout from '../../layouts/PageHeaderLayout';
 
 const FormItem = Form.Item;
@@ -127,41 +127,42 @@ export default class BasicForms extends PureComponent {
                       (
                         <div>
                           {item.isDefault === true ? (
-                            <div>
-                              <Card
-                                style={{ marginBottom: 16 }}
-                                title={<div style={{ fontWeight: 600 }}>收货地址 <Tag color="red">默认</Tag></div>}
-                              >
-                                <div>
-                                  <div style={{ fontWeight: 450 }}>
-                                    <Icon type="environment-o" />{item.province} {item.city} {item.area}
-                                  </div>
-                                  <div style={{ fontWeight: 450 }}>{item.address === undefined ? '' : item.address}</div>
-                                  <br />
-                                </div>
-                                <div>
-                                  {item.pointerUser === undefined || item.pointerUser.username === undefined ? '' : (
+                            <div style={{ marginBottom: 16 }}>
+                              <Collapse defaultActiveKey={['1']}>
+                                <Panel header={<span style={{ fontWeight: 600 }}>收货地址 <Tag color="red">默认</Tag></span>} key="1" >
+                                  <p>
                                     <div>
-                                      <div style={{ fontWeight: 600 }}><Icon type="user" />收货人</div>
                                       <div style={{ fontWeight: 450 }}>
-                                        {item.pointerUser.username}
+                                        <Icon type="environment-o" />{item.province} {item.city} {item.area}
                                       </div>
+                                      <div style={{ fontWeight: 450 }}>{item.address === undefined ? '' : item.address}</div>
+                                      <br />
                                     </div>
-                                    )}
-                                  <br />
-                                </div>
-                                <div>
-                                  {item.pointerUser === undefined || item.pointerUser.phone === undefined ? '' : (
                                     <div>
-                                      <div style={{ fontWeight: 600 }}><Icon type="mobile" />收货人电话</div>
-                                      <div style={{ fontWeight: 450 }}>
-                                        {item.pointerUser.phone}
-                                      </div>
+                                      {item.pointerUser === undefined || item.pointerUser.username === undefined ? '' : (
+                                        <div>
+                                          <div style={{ fontWeight: 600 }}><Icon type="user" />收货人</div>
+                                          <div style={{ fontWeight: 450 }}>
+                                            {item.pointerUser.username}
+                                          </div>
+                                        </div>
+                                      )}
+                                      <br />
                                     </div>
-                                    )}
-                                  <br />
-                                </div>
-                              </Card>
+                                    <div>
+                                      {item.pointerUser === undefined || item.pointerUser.phone === undefined ? '' : (
+                                        <div>
+                                          <div style={{ fontWeight: 600 }}><Icon type="mobile" />收货人电话</div>
+                                          <div style={{ fontWeight: 450 }}>
+                                            {item.pointerUser.phone}
+                                          </div>
+                                        </div>
+                                      )}
+                                      <br />
+                                    </div>
+                                  </p>
+                                </Panel>
+                              </Collapse>
                             </div>
                           ) : ''}
                         </div>
@@ -173,41 +174,42 @@ export default class BasicForms extends PureComponent {
                         (
                           <div>
                             {item.isDefault === false ? (
-                              <div>
-                                <Card
-                                  style={{ marginBottom: 16 }}
-                                  title={<div style={{ fontWeight: 600 }}>收货地址</div>}
-                                >
-                                  <div>
-                                    <div style={{ fontWeight: 450 }}>
-                                      <Icon type="environment-o" />{item.province} {item.city} {item.area}
-                                    </div>
-                                    <div style={{ fontWeight: 450 }}>{item.address === undefined ? '' : item.address}</div>
-                                    <br />
-                                  </div>
-                                  <div>
-                                    {item.pointerUser === undefined || item.pointerUser.username === undefined ? '' : (
+                              <div style={{ marginBottom: 16 }}>
+                                <Collapse defaultActiveKey={['1']}>
+                                  <Panel header={<span style={{ fontWeight: 600 }}>收货地址</span>} key="1" >
+                                    <p>
                                       <div>
-                                        <div style={{ fontWeight: 600 }}><Icon type="user" />收货人</div>
                                         <div style={{ fontWeight: 450 }}>
-                                          {item.pointerUser.username}
+                                          <Icon type="environment-o" />{item.province} {item.city} {item.area}
                                         </div>
+                                        <div style={{ fontWeight: 450 }}>{item.address === undefined ? '' : item.address}</div>
+                                        <br />
                                       </div>
-                                    )}
-                                    <br />
-                                  </div>
-                                  <div>
-                                    {item.pointerUser === undefined || item.pointerUser.phone === undefined ? '' : (
                                       <div>
-                                        <div style={{ fontWeight: 600 }}><Icon type="mobile" />收货人电话</div>
-                                        <div style={{ fontWeight: 450 }}>
-                                          {item.pointerUser.phone}
-                                        </div>
+                                        {item.pointerUser === undefined || item.pointerUser.username === undefined ? '' : (
+                                          <div>
+                                            <div style={{ fontWeight: 600 }}><Icon type="user" />收货人</div>
+                                            <div style={{ fontWeight: 450 }}>
+                                              {item.pointerUser.username}
+                                            </div>
+                                          </div>
+                                        )}
+                                        <br />
                                       </div>
-                                    )}
-                                    <br />
-                                  </div>
-                                </Card>
+                                      <div>
+                                        {item.pointerUser === undefined || item.pointerUser.phone === undefined ? '' : (
+                                          <div>
+                                            <div style={{ fontWeight: 600 }}><Icon type="mobile" />收货人电话</div>
+                                            <div style={{ fontWeight: 450 }}>
+                                              {item.pointerUser.phone}
+                                            </div>
+                                          </div>
+                                        )}
+                                        <br />
+                                      </div>
+                                    </p>
+                                  </Panel>
+                                </Collapse>
                               </div>
                             ) : ''}
                           </div>
