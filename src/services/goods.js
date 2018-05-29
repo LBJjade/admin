@@ -161,3 +161,24 @@ export async function deleteGoods(params) {
     method: 'DELETE',
   });
 }
+
+// GoodsSku API
+export async function getGoodsSku(params) {
+  const url = requestParams2Url(params);
+  return request(`/api/classes/GoodsSku${url}`, {
+    method: 'GET',
+  });
+}
+
+export async function postGoodsSku(params) {
+  return request('/api/classes/GoodsSku', {
+    method: 'POST',
+    body: params,
+  });
+}
+
+export async function deleteGoodsSku(params) {
+  return request(`/api/classes/GoodsSku/${params.objectId}`, {
+    method: 'DELETE',
+  });
+}

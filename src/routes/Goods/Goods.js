@@ -31,9 +31,10 @@ export default class Goods extends React.PureComponent {
   state = {
     editing: false,
     editorState: EditorState.createEmpty(),
+    price: 0,
   };
 
-  componentDidMount() {
+  componentWillMount() {
     const { dispatch, location } = this.props;
     const { search } = location;
 
@@ -73,7 +74,34 @@ export default class Goods extends React.PureComponent {
     });
   }
 
-  componentWillReceiveProps() {
+  componentWillReceiveProps(nextProps) {
+    if (nextProps.goods.goods !== this.props.goods.goods) {
+      const { goods } = nextProps.goods;
+      this.setState({ price: goods && goods.price ? goods.price : 0 });
+
+
+      // 组织goodsSku数据结构
+      const goodsSkuColumns = [];
+      if (goods && goods.goodsSku && goods.goodsSku.length > 0) {
+        const goodsSkuItem = goods.goodsSku[0];
+        const skuName = goodsSkuItem.skuName.split(',');
+        skuName.forEach((item, index) => {
+          const col = {
+            title: item.split(':')[0],
+            dataIndex: `spec_${index}`,
+            key: `spec_${index}`,
+          };
+          goodsSkuColumns.push(col);
+        });
+        goodsSkuColumns.push({ title: '单价', dataIndex: 'price', key: 'price', editable: true });
+        goodsSkuColumns.push({ title: '库存', dataIndex: 'stock', key: 'stock', editable: true });
+        goodsSkuColumns.push({ title: '条码', dataIndex: 'barCode', key: 'barCode', editable: true });
+
+        this.setState({ specColumns: goodsSkuColumns });
+        this.setState({ specDataSource: goods.goodsSku });
+      }
+    }
+
     const { search } = this.props.location;
     if (search) {
       this.setState({ editing: true });
@@ -176,13 +204,13 @@ export default class Goods extends React.PureComponent {
     // 重获父级规格
     const specParent = specs.filter(i => specTmp3.indexOf(i.objectId) >= 0);
 
-    const specColumns = [];
+    let specColumns = [];
     let specDataSource = [];
 
-    specParent.forEach((i) => {
+    specParent.forEach((i, index) => {
       specColumns.push({
         title: i.name,
-        dataIndex: i.objectId,
+        dataIndex: `spec_${index}_${i.objectId}`,
         key: i.objectId,
       });
     });
@@ -192,25 +220,62 @@ export default class Goods extends React.PureComponent {
       const col = specColumns[i];
       const tmp = [];
       if (i <= 0) {
-        specChild.filter(j => j.pointerSpec.objectId === col.dataIndex).forEach((k) => {
+        // specChild.filter(j => j.pointerSpec.objectId === col.dataIndex).forEach((k) => {
+        specChild.filter(j => col.dataIndex.indexOf(j.pointerSpec.objectId) >= 0).forEach((k) => {
           const obj = {};
-          obj.key = k.objectId;
-          obj[col.dataIndex] = k.name;
+          obj.key = `${col.key}:${k.objectId}`;
+          obj.skuName = `${col.title}:${k.title}`;
+          obj[`spec_${i}`] = k.title;
           specDataSource.push(obj);
         });
       } else {
         specDataSource.forEach((l) => {
-          specChild.filter(j => j.pointerSpec.objectId === col.dataIndex).forEach((k) => {
+          // specChild.filter(j => j.pointerSpec.objectId === col.dataIndex).forEach((k) => {
+          specChild.filter(j => col.dataIndex.indexOf(j.pointerSpec.objectId) >= 0).forEach((k) => {
             const obj = { ...l };
-            obj.key = `${obj.key}-${k.objectId}`;
-            obj[col.dataIndex] = k.name;
+            obj.key = `${obj.key},${col.key}:${k.objectId}`;
+            obj.skuName = `${obj.skuName},${col.title}:${k.title}`;
+            obj[`spec_${i}`] = k.title;
             tmp.push(obj);
           });
         });
       }
+
+      // 列名去掉后面，由原来col_x_xxxxxxxx改为col_x
+      col.dataIndex = `spec_${i}`;
+
       if (tmp.length > 0) {
         specDataSource = tmp;
       }
+    }
+
+    // 添加单价库存条码等列
+    const specColumnsExtra = [
+      {
+        dataIndex: 'price',
+        title: '单价',
+        key: 'price',
+        editable: true,
+      }, {
+        dataIndex: 'stock',
+        title: '库存',
+        key: 'stock',
+        editable: true,
+      }, {
+        dataIndex: 'barCode',
+        title: '条码',
+        key: 'barCode',
+        editable: true,
+      },
+    ];
+
+    if (specColumns && specColumns.length) {
+      specColumns = specColumns.concat(specColumnsExtra);
+    }
+
+    const { price } = this.state;
+    if (specDataSource && specDataSource.length) {
+      specDataSource = specDataSource.map(i => ({ ...i, price, stock: 1, barCode: '' }));
     }
 
     this.setState({
@@ -234,6 +299,10 @@ export default class Goods extends React.PureComponent {
       type: 'file/storeFile',
       payload: file,
     });
+  };
+
+  handlePriceChange = (e) => {
+    this.setState({ price: e.length <= 0 ? 0 : e });
   };
 
   handleOK = (e) => {
@@ -309,7 +378,7 @@ export default class Goods extends React.PureComponent {
     const { form, loading } = this.props;
     const { getFieldDecorator } = form;
     const { goods } = this.props.goods;
-    const { editing, multSku } = this.state;
+    const { editing, multSku, price } = this.state;
 
     const categorys = this.Tree(this.props.category.category.results, 'pointerCategory');
     const specs = this.Tree(this.props.spec.spec.results, 'pointerSpec');
@@ -349,32 +418,32 @@ export default class Goods extends React.PureComponent {
 
     const { editorState } = this.state;
 
-    const specColumnsExtra = [
-      {
-        dataIndex: 'price',
-        title: '单价',
-        key: 'price',
-        editable: true,
-      }, {
-        dataIndex: 'stock',
-        title: '库存',
-        key: 'stock',
-        editable: true,
-      }, {
-        dataIndex: 'barCode',
-        title: '条码',
-        key: 'barCode',
-        editable: true,
-      },
-    ];
-
-    if (specColumns && specColumns.length) {
-      specColumns = specColumns.concat(specColumnsExtra);
-    }
-
-    if (specDataSource && specDataSource.length) {
-      specDataSource = specDataSource.map(i => ({ ...i, price: 0, stock: 1, barCode: '' }));
-    }
+    // const specColumnsExtra = [
+    //   {
+    //     dataIndex: 'price',
+    //     title: '单价',
+    //     key: 'price',
+    //     editable: true,
+    //   }, {
+    //     dataIndex: 'stock',
+    //     title: '库存',
+    //     key: 'stock',
+    //     editable: true,
+    //   }, {
+    //     dataIndex: 'barCode',
+    //     title: '条码',
+    //     key: 'barCode',
+    //     editable: true,
+    //   },
+    // ];
+    //
+    // if (specColumns && specColumns.length) {
+    //   specColumns = specColumns.concat(specColumnsExtra);
+    // }
+    //
+    // if (specDataSource && specDataSource.length) {
+    //   specDataSource = specDataSource.map(i => ({ ...i, price, stock: 1, barCode: '' }));
+    // }
 
     let keyword = goods && goods.keyword ? goods.keyword || '' : '';
     // keyword 兼容老数据
@@ -388,7 +457,6 @@ export default class Goods extends React.PureComponent {
     keyword = keyword.replace(/\s+/g, ',');
     keyword = keyword.length > 0 ? keyword.split(',') : [];
     // const keywordOption = keyword.map(i => (<Select.Option key={i}>{i}</Select.Option>));
-
 
     const formItemLayout = {
       labelCol: {
@@ -518,6 +586,7 @@ export default class Goods extends React.PureComponent {
                           <InputNumber
                             formatter={value => `¥ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
                             parser={value => value.replace(/\¥\s?|(,*)/g, '')}
+                            onChange={this.handlePriceChange}
                           />
                         )}
                       </Form.Item>
@@ -656,7 +725,7 @@ export default class Goods extends React.PureComponent {
                           ],
                         })(
                           <TreeSelect
-                            treeData={multSku ? specs : []}
+                            treeData={specs}
                             treeCheckable
                             showCheckedStrategy={TreeSelect.SHOW_CHILD}
                             placeholder="请选择商品规格"
@@ -670,11 +739,11 @@ export default class Goods extends React.PureComponent {
                       >
                         {getFieldDecorator('goodsSku', {
                           valuePropName: 'dataSource',
-                          initialValue: this.state.multSku ? specDataSource : [],
+                          initialValue: specDataSource,
                         })(
                           <EditableTable
                             size="small"
-                            columns={this.state.multSku ? specColumns : []}
+                            columns={specColumns}
                             pagination={false}
                           />
                         )}

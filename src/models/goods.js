@@ -1,5 +1,5 @@
 import { message } from 'antd';
-import { getGoodses, getGoods, postGoods, putGoods, deleteGoods, getGoodsImage, postGoodsImage, deleteGoodsImage } from '../services/goods';
+import { getGoodses, getGoods, postGoods, putGoods, deleteGoods, getGoodsSku } from '../services/goods';
 
 export default {
   namespace: 'goods',
@@ -10,6 +10,7 @@ export default {
       count: 0,
     },
     goods: undefined,
+    goodsSku: [],
   },
 
   effects: {
@@ -67,6 +68,13 @@ export default {
     *trashGoods(_, { put }) {
       yield put({ type: 'emptyGoods' });
     },
+
+    // goodsSku
+    *fetchGoodsSku({ payload }, { call, put }) {
+      const respon = yield call(getGoodsSku, payload);
+      yield put({ type: 'queryGoodsSku', payload: respon });
+    },
+
   },
 
   reducers: {
@@ -110,6 +118,14 @@ export default {
         ...state,
         goods: undefined,
       });
+    },
+
+    // GoodsSku
+    queryGoodsSku(state, action) {
+      return {
+        ...state,
+        goodsSku: action.payload,
+      };
     },
   },
 };

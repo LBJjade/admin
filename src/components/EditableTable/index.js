@@ -15,6 +15,7 @@ class EditableTable extends React.PureComponent {
   state={
     loading: this.props.loading,
     dataKey: this.props.dataKey,
+    data: this.props.dataSource,
   };
 
   componentWillReceiveProps(nextProps) {
@@ -121,6 +122,7 @@ class EditableTable extends React.PureComponent {
     this.setState({ data: newData });
     this.clickedCancel = false;
   };
+
 
   render() {
     let { columns } = this.props;
