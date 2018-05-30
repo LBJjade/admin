@@ -3,7 +3,7 @@ import React, { PureComponent } from 'react';
 import moment from 'moment';
 import { connect } from 'dva';
 import { Link, routerRedux } from 'dva/router';
-import { Form, Input, Button, Tag, Tooltip, Row, Col, Select, List, Icon, Collapse } from 'antd';
+import { Form, Input, Button, Card, Tag, Tooltip, Row, Col, Select, List, Icon, Collapse } from 'antd';
 import PageHeaderLayout from '../../layouts/PageHeaderLayout';
 
 const FormItem = Form.Item;
@@ -137,20 +137,20 @@ export default class BasicForms extends PureComponent {
                               {item.isDefault === true ? (
                                 <div style={{ marginBottom: 16 }}>
                                   <Collapse defaultActiveKey={['1']}>
-                                    <Panel header={<span style={{ fontWeight: 600 }}>默认地址 <Tag color="red">默认</Tag></span>} key="1" >
+                                    <Panel header={<span style={{ fontWeight: 600 }}><Icon type="environment-o" />收货地址 <Tag color="red">默认</Tag></span>} key="1" >
                                       <p>
                                         <div>
                                           <div style={{ fontWeight: 450 }}>
-                                            <Icon type="environment-o" />{item.province === undefined ? '' : item.province} {item.city === undefined ? '' : item.city} {item.area === undefined ? '' : item.area}
+                                            {item.province === undefined ? '' : item.province} {item.city === undefined ? '' : item.city} {item.area === undefined ? '' : item.area}
                                           </div>
-                                          <div style={{ fontWeight: 450 }}>{item.address === undefined ? '' : item.address}</div>
+                                          <div style={{ fontWeight: 450, color: '#8e8989' }}>{item.address === undefined ? '' : item.address}</div>
                                           <br />
                                         </div>
                                         <div>
                                           {item.realName === undefined ? '' : (
                                             <div>
                                               <div style={{ fontWeight: 600 }}><Icon type="user" />收货人</div>
-                                              <div style={{ fontWeight: 450 }}>
+                                              <div style={{ fontWeight: 450, color: '#8e8989' }}>
                                                 {item.realName}
                                               </div>
                                             </div>
@@ -161,7 +161,7 @@ export default class BasicForms extends PureComponent {
                                           {item.mobile === undefined ? '' : (
                                             <div>
                                               <div style={{ fontWeight: 600 }}><Icon type="mobile" />收货人电话</div>
-                                              <div style={{ fontWeight: 450 }}>
+                                              <div style={{ fontWeight: 450, color: '#8e8989' }}>
                                                 {item.mobile}
                                               </div>
                                             </div>
@@ -184,20 +184,20 @@ export default class BasicForms extends PureComponent {
                               {item.isDefault === false ? (
                                 <div style={{ marginBottom: 16 }}>
                                   <Collapse defaultActiveKey={['1']}>
-                                    <Panel header={<span style={{ fontWeight: 600 }}>其他地址</span>} key="1" >
+                                    <Panel header={<span style={{ fontWeight: 600 }}><Icon type="environment-o" />收货地址</span>} key="1" >
                                       <p>
                                         <div>
                                           <div style={{ fontWeight: 450 }}>
-                                            <Icon type="environment-o" />{item.province === undefined ? '' : item.province} {item.city === undefined ? '' : item.city} {item.area === undefined ? '' : item.area}
+                                            {item.province === undefined ? '' : item.province} {item.city === undefined ? '' : item.city} {item.area === undefined ? '' : item.area}
                                           </div>
-                                          <div style={{ fontWeight: 450 }}>{item.address === undefined ? '' : item.address}</div>
+                                          <div style={{ fontWeight: 450, color: '#8e8989' }}>{item.address === undefined ? '' : item.address}</div>
                                           <br />
                                         </div>
                                         <div>
                                           {item.realName === undefined ? '' : (
                                             <div>
                                               <div style={{ fontWeight: 600 }}><Icon type="user" />收货人</div>
-                                              <div style={{ fontWeight: 450 }}>
+                                              <div style={{ fontWeight: 450, color: '#8e8989' }}>
                                                 {item.realName}
                                               </div>
                                             </div>
@@ -208,7 +208,7 @@ export default class BasicForms extends PureComponent {
                                           {item.mobile === undefined ? '' : (
                                             <div>
                                               <div style={{ fontWeight: 600 }}><Icon type="mobile" />收货人电话</div>
-                                              <div style={{ fontWeight: 450 }}>
+                                              <div style={{ fontWeight: 450, color: '#8e8989' }}>
                                                 {item.mobile}
                                               </div>
                                             </div>
@@ -218,6 +218,102 @@ export default class BasicForms extends PureComponent {
                                       </p>
                                     </Panel>
                                   </Collapse>
+                                </div>
+                              ) : ''}
+                            </div>
+                          ))}
+                      />
+                    </div>
+                  )}
+                </p>
+              </Panel>
+            </Collapse>
+            <Collapse defaultActiveKey={['1']}>
+              <Panel header={<span style={{ fontWeight: 600 }}>收货地址</span>} key="1" >
+                <p>
+                  {address.results === undefined || address.results.length === 0 ? (<div style={{ textAlign: 'center' }}>暂无数据</div>) : (
+                    <div>
+                      <List
+                        dataSource={address.results}
+                        renderItem={item => (
+                          (
+                            <div>
+                              {item.isDefault === true ? (
+                                <div style={{ marginBottom: 16 }}>
+                                  <div>
+                                    <div style={{ fontWeight: 450 }}>
+                                      <div style={{ fontWeight: 600 }}><Icon type="environment-o" />收货地址 <Tag color="red">默认</Tag></div>
+                                      {item.province === undefined ? '' : item.province} {item.city === undefined ? '' : item.city} {item.area === undefined ? '' : item.area}
+                                    </div>
+                                    <div style={{ fontWeight: 450, color: '#8e8989' }}>{item.address === undefined ? '' : item.address}</div>
+                                    <br />
+                                  </div>
+                                  <div>
+                                    {item.realName === undefined ? '' : (
+                                      <div>
+                                        <div style={{ fontWeight: 600 }}><Icon type="user" />收货人</div>
+                                        <div style={{ fontWeight: 450, color: '#8e8989' }}>
+                                          {item.realName}
+                                        </div>
+                                      </div>
+                                      )}
+                                    <br />
+                                  </div>
+                                  <div>
+                                    {item.mobile === undefined ? '' : (
+                                      <div>
+                                        <div style={{ fontWeight: 600 }}><Icon type="mobile" />收货人电话</div>
+                                        <div style={{ fontWeight: 450, color: '#8e8989' }}>
+                                          {item.mobile}
+                                        </div>
+                                      </div>
+                                      )}
+                                    <br />
+                                  </div>
+                                  <hr style={{ color: '#dadada', opacity: 0.6 }} />
+                                </div>
+                              ) : ''}
+                            </div>
+                          ))}
+                      />
+                      <List
+                        dataSource={address.results}
+                        renderItem={item => (
+                          (
+                            <div>
+                              {item.isDefault === false ? (
+                                <div style={{ marginBottom: 16 }}>
+                                  <div>
+                                    <div style={{ fontWeight: 450 }}>
+                                      <div style={{ fontWeight: 600 }}><Icon type="environment-o" />收货地址</div>
+                                      {item.province === undefined ? '' : item.province} {item.city === undefined ? '' : item.city} {item.area === undefined ? '' : item.area}
+                                    </div>
+                                    <div style={{ fontWeight: 450, color: '#8e8989' }}>{item.address === undefined ? '' : item.address}</div>
+                                    <br />
+                                  </div>
+                                  <div>
+                                    {item.realName === undefined ? '' : (
+                                      <div>
+                                        <div style={{ fontWeight: 600 }}><Icon type="user" />收货人</div>
+                                        <div style={{ fontWeight: 450, color: '#8e8989' }}>
+                                          {item.realName}
+                                        </div>
+                                      </div>
+                                      )}
+                                    <br />
+                                  </div>
+                                  <div>
+                                    {item.mobile === undefined ? '' : (
+                                      <div>
+                                        <div style={{ fontWeight: 600 }}><Icon type="mobile" />收货人电话</div>
+                                        <div style={{ fontWeight: 450, color: '#8e8989' }}>
+                                          {item.mobile}
+                                        </div>
+                                      </div>
+                                      )}
+                                    <br />
+                                  </div>
+                                  <hr style={{ color: '#dadada', opacity: 0.6 }} />
                                 </div>
                               ) : ''}
                             </div>
@@ -380,6 +476,104 @@ export default class BasicForms extends PureComponent {
                       </Button>
                     </FormItem>
                   </Form>
+                </p>
+              </Panel>
+            </Collapse>
+            <Collapse defaultActiveKey={['1']}>
+              <Panel header={<span style={{ fontWeight: 600 }}>收货地址</span>} key="1" >
+                <p>
+                  {address.results === undefined || address.results.length === 0 ? (<div style={{ textAlign: 'center' }}>暂无数据</div>) : (
+                    <div>
+                      <List
+                        dataSource={address.results}
+                        renderItem={item => (
+                          (
+                            <div>
+                              {item.isDefault === true ? (
+                                <div style={{ marginBottom: 16 }}>
+                                  <Card>
+                                    <div>
+                                      <div style={{ fontWeight: 450 }}>
+                                        <div style={{ fontWeight: 600 }}><Icon type="environment-o" />收货地址 <Tag color="red">默认</Tag></div>
+                                        {item.province === undefined ? '' : item.province} {item.city === undefined ? '' : item.city} {item.area === undefined ? '' : item.area}
+                                      </div>
+                                      <div style={{ fontWeight: 450, color: '#8e8989' }}>{item.address === undefined ? '' : item.address}</div>
+                                      <br />
+                                    </div>
+                                    <div>
+                                      {item.realName === undefined ? '' : (
+                                        <div>
+                                          <div style={{ fontWeight: 600 }}><Icon type="user" />收货人</div>
+                                          <div style={{ fontWeight: 450, color: '#8e8989' }}>
+                                            {item.realName}
+                                          </div>
+                                        </div>
+                                      )}
+                                      <br />
+                                    </div>
+                                    <div>
+                                      {item.mobile === undefined ? '' : (
+                                        <div>
+                                          <div style={{ fontWeight: 600 }}><Icon type="mobile" />收货人电话</div>
+                                          <div style={{ fontWeight: 450, color: '#8e8989' }}>
+                                            {item.mobile}
+                                          </div>
+                                        </div>
+                                      )}
+                                      <br />
+                                    </div>
+                                  </Card>
+                                </div>
+                              ) : ''}
+                            </div>
+                          ))}
+                      />
+                      <List
+                        dataSource={address.results}
+                        renderItem={item => (
+                          (
+                            <div>
+                              {item.isDefault === false ? (
+                                <div style={{ marginBottom: 16 }}>
+                                  <Card>
+                                    <div>
+                                      <div style={{ fontWeight: 450 }}>
+                                        <div style={{ fontWeight: 600 }}><Icon type="environment-o" />收货地址</div>
+                                        {item.province === undefined ? '' : item.province} {item.city === undefined ? '' : item.city} {item.area === undefined ? '' : item.area}
+                                      </div>
+                                      <div style={{ fontWeight: 450, color: '#8e8989' }}>{item.address === undefined ? '' : item.address}</div>
+                                      <br />
+                                    </div>
+                                    <div>
+                                      {item.realName === undefined ? '' : (
+                                        <div>
+                                          <div style={{ fontWeight: 600 }}><Icon type="user" />收货人</div>
+                                          <div style={{ fontWeight: 450, color: '#8e8989' }}>
+                                            {item.realName}
+                                          </div>
+                                        </div>
+                                      )}
+                                      <br />
+                                    </div>
+                                    <div>
+                                      {item.mobile === undefined ? '' : (
+                                        <div>
+                                          <div style={{ fontWeight: 600 }}><Icon type="mobile" />收货人电话</div>
+                                          <div style={{ fontWeight: 450, color: '#8e8989' }}>
+                                            {item.mobile}
+                                          </div>
+                                        </div>
+                                      )}
+                                      <br />
+                                    </div>
+                                  </Card>
+                                </div>
+                              ) : ''}
+                            </div>
+                          ))}
+                      />
+                    </div>
+                  )}
                 </p>
               </Panel>
             </Collapse>
