@@ -67,8 +67,10 @@ export async function getVerifyEmail(params) {
 }
 
 export async function postUserAuth(params) {
-  const tag = params.tags.join(',');
-  params.values.tags = tag;
+  if (params.tags !== undefined) {
+    const tag = params.tags.join(',');
+    params.values.tags = tag;
+  }
   return request('/api/classes/UserAuth', {
     method: 'POST',
     body: params.values,
