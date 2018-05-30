@@ -58,6 +58,7 @@ export default class Goods extends React.PureComponent {
               objectId,
             },
           },
+          order: 'order',
         },
       });
     } else {
@@ -133,9 +134,9 @@ export default class Goods extends React.PureComponent {
           };
           goodsSkuColumns.push(col);
         });
-        goodsSkuColumns.push({ title: '单价', dataIndex: 'price', key: 'price', editable: true, type: 'number' });
-        goodsSkuColumns.push({ title: '重量', dataIndex: 'weight', key: 'weight', editable: true, type: 'number' });
-        goodsSkuColumns.push({ title: '库存', dataIndex: 'stock', key: 'stock', editable: true, type: 'number' });
+        goodsSkuColumns.push({ title: '单价', dataIndex: 'price', key: 'price', editable: true, type: 'number', min: 0 });
+        goodsSkuColumns.push({ title: '重量', dataIndex: 'weight', key: 'weight', editable: true, type: 'number', min: 0 });
+        goodsSkuColumns.push({ title: '库存', dataIndex: 'stock', key: 'stock', editable: true, type: 'number', min: 0 });
         goodsSkuColumns.push({ title: '条码', dataIndex: 'barCode', key: 'barCode', editable: true });
 
         this.setState({ specColumns: goodsSkuColumns });
@@ -291,18 +292,21 @@ export default class Goods extends React.PureComponent {
         key: 'price',
         editable: true,
         type: 'number',
+        min: 0,
       }, {
         dataIndex: 'weight',
         title: '重量',
         key: 'weight',
         editable: true,
         type: 'number',
+        min: 0,
       }, {
         dataIndex: 'stock',
         title: '库存',
         key: 'stock',
         editable: true,
         type: 'number',
+        min: 0,
       }, {
         dataIndex: 'barCode',
         title: '条码',
@@ -320,6 +324,7 @@ export default class Goods extends React.PureComponent {
       specDataSource = specDataSource.map(i => ({ ...i, price, weight, stock, barCode: '' }));
     }
 
+    this.props.form.resetFields(['goodsSku']);
     this.setState({
       specColumns,
       specDataSource,
@@ -393,7 +398,7 @@ export default class Goods extends React.PureComponent {
 
         goods.isNew = goods.isNew ? 1 : 0;
 
-        goods.multSku = goods.multSku ? 1 : 0;
+        goods.multiSku = goods.multiSku ? 1 : 0;
 
         if (values.keyword) {
           goods.keyword = values.keyword.toString();
@@ -460,8 +465,8 @@ export default class Goods extends React.PureComponent {
             payload: goods,
           }).then(() => {
             const objectId = this.props.goods.goods.objectId;
-            if (objectId) {
-              goods.goodsSku.forEach((sku, index) => {
+            if (objectId && values.goodsSku) {
+              values.goodsSku.forEach((sku, index) => {
                 const obj = _.clone(sku);
                 // 删除控件附带的属性
                 delete obj.isNew;
@@ -828,9 +833,9 @@ export default class Goods extends React.PureComponent {
                         {...formItemLayout}
                         label="商品多规格"
                       >
-                        {getFieldDecorator('multSku', {
+                        {getFieldDecorator('multiSku', {
                           valuePropName: 'checked',
-                          initialValue: goods && goods.multSku > 0,
+                          initialValue: goods && goods.multiSku > 0,
                           rules: [
                             { required: false, message: '请选择商品是否多规格！' },
                           ],

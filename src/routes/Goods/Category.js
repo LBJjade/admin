@@ -676,6 +676,9 @@ export default class Category extends React.PureComponent {
                 <Form.Item label="类目名称" labelCol={{ span: 6 }} wrapperCol={{ span: 16 }}>
                   {getFieldDecorator('name', {
                     initialValue: category.name,
+                    rules: [
+                      { required: true, message: '请输入类目名称！' },
+                    ],
                   })(
                     <Input placeholder="请输入类目名称" />
                   )}

@@ -133,6 +133,7 @@ class EditableTable extends React.PureComponent {
                   value={text}
                   onChange={e => this.handleFieldChange(e, col.dataIndex, record.key)}
                   onKeyPress={e => this.handleKeyPress(e, record)}
+                  min={col.min}
                 />
               );
             } else {
