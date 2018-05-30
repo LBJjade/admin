@@ -5,7 +5,9 @@ export default {
   namespace: 'file',
 
   state: {
-    file: undefined,
+    file: {
+      results: [],
+    },
   },
 
   effects: {
@@ -56,7 +58,6 @@ export default {
         ...state,
         file: {
           results: state.file.results.concat(action.payload),
-          count: state.data.count + 1,
         },
       });
     },
@@ -79,7 +80,6 @@ export default {
         ...state,
         file: {
           results: state.file.results.filter(item => item.objectId !== action.payload.objectId),
-          count: state.file.count - 1,
         },
       });
     },

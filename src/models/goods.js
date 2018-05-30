@@ -12,7 +12,6 @@ export default {
     goods: undefined,
     goodsSku: {
       results: [],
-      count: 0,
     },
   },
 
@@ -166,7 +165,6 @@ export default {
         ...state,
         goodsSku: {
           results: state.goodsSku.results.concat(action.payload),
-          count: state.data.count + 1,
         },
       });
     },
@@ -189,7 +187,6 @@ export default {
         ...state,
         goodsSku: {
           results: state.goodsSku.results.filter(item => item.objectId !== action.payload.objectId),
-          count: state.goodsSku.count - 1,
         },
       });
     },
@@ -198,7 +195,6 @@ export default {
         ...state,
         goodsSku: {
           results: [],
-          count: 0,
         },
       });
     },
