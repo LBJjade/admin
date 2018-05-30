@@ -34,19 +34,14 @@ export default class UploadImage extends React.PureComponent {
   };
 
   handleRemove = (file) => {
-    // const { fileList } = this.state;
-    // this.setState({
-    //   fileList: [...fileList.filter(i => i.uid !== file.uid)],
-    // });
     if (this.props.onRemove) {
       this.props.onRemove(file);
     }
     return true;
   };
 
-  handleChange = (changeValue) => {
-    // console.log(fileList);
-    const { fileList } = changeValue;
+  handleChange = (fileInfo) => {
+    const { fileList } = fileInfo;
     this.setState({ fileList: [...fileList] });
 
     // 保证getFieldDecorator能够用valuePropName:'fileList'获取到fileList值

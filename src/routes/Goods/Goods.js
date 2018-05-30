@@ -47,6 +47,23 @@ export default class Goods extends React.PureComponent {
         payload: {
           objectId,
         },
+      }).then(() => {
+        const { goods } = this.props.goods;
+        if (goods && goods.objectId) {
+          dispatch({
+            type: 'file/fetchFile',
+            payload: {
+              where: {
+                pointerClassName: 'Goods',
+                pointerObjectId: goods.objectId,
+              },
+            },
+          });
+        } else {
+          dispatch({
+            type: 'file/trashFile',
+          });
+        }
       });
       dispatch({
         type: 'goods/fetchGoodsSku',
@@ -95,29 +112,8 @@ export default class Goods extends React.PureComponent {
       this.setState({ price: goods && goods.price ? goods.price : 0 });
       this.setState({ weight: goods && goods.weight ? goods.weight : 0 });
       this.setState({ stock: goods && goods.stock ? goods.stock : 0 });
-
-      // // 组织goodsSku数据结构
-      // const goodsSkuColumns = [];
-      // if (goods && goods.goodsSku && goods.goodsSku.length > 0) {
-      //   const goodsSkuItem = goods.goodsSku[0];
-      //   const skuName = goodsSkuItem.skuName.split(',');
-      //   skuName.forEach((item, index) => {
-      //     const col = {
-      //       title: item.split(':')[0],
-      //       dataIndex: `spec_${index}`,
-      //       key: `spec_${index}`,
-      //     };
-      //     goodsSkuColumns.push(col);
-      //   });
-      //   goodsSkuColumns.push({ title: '单价', dataIndex: 'price', key: 'price', editable: true });
-      //   goodsSkuColumns.push({ title: '重量', dataIndex: 'weight', key: 'weight', editable: true });
-      //   goodsSkuColumns.push({ title: '库存', dataIndex: 'stock', key: 'stock', editable: true });
-      //   goodsSkuColumns.push({ title: '条码', dataIndex: 'barCode', key: 'barCode', editable: true });
-      //
-      //   this.setState({ specColumns: goodsSkuColumns });
-      //   this.setState({ specDataSource: goods.goodsSku });
-      // }
     }
+
     if (nextProps.goods.goodsSku !== this.props.goods.goodsSku) {
       // this.setState({ goodsSku: nextProps.goods.goodsSku });
 
@@ -148,6 +144,20 @@ export default class Goods extends React.PureComponent {
     if (search) {
       this.setState({ editing: true });
     }
+  }
+
+  componentWillUnmount() {
+    // 清除model
+    const { dispatch } = this.props;
+    dispatch({
+      type: 'goods/trashFile',
+    });
+    dispatch({
+      type: 'goods/trashGoodsSku',
+    });
+    dispatch({
+      type: 'file/trashFile',
+    });
   }
 
   Tree = (data, parentKey = 'pointerCategory') => {
@@ -332,7 +342,7 @@ export default class Goods extends React.PureComponent {
   };
 
   handleImageSuccess = (fileInfo) => {
-    const { dispatch } = this.props;
+    const { dispatch, goods } = this.props;
     const file = {
       uid: fileInfo.file.uid,
       name: fileInfo.file.name,
@@ -341,6 +351,9 @@ export default class Goods extends React.PureComponent {
       lastModifiedDate: fileInfo.file.lastModifiedDate,
       thumbUrl: fileInfo.response.name,
       url: fileInfo.response.url,
+      pointerClassName: 'Goods',
+      pointerObjectId: goods && goods.goods ? goods.goods.objectId || '' : '',
+      status: 'prestore',
     };
     dispatch({
       type: 'file/storeFile',
@@ -408,13 +421,14 @@ export default class Goods extends React.PureComponent {
 
         // 修改商品
         if (values.objectId) {
+          let oldGoodsSku = _.clone(this.props.goods.goodsSku.results); // 获取原来GoodsSku
+          let oldThumbs = _.clone(this.props.goods.goods.thumbs); // 获取原来的thumbs
+
           dispatch({
             type: 'goods/coverGoods',
             payload: goods,
           }).then(() => {
             // GoodsSku
-            let oldGoodsSku = _.clone(this.props.goods.goodsSku.results); // 获取原来GoodsSku
-
             values.goodsSku.forEach((sku, index) => {
               const obj = _.clone(sku);
               // 删除控件附带的属性
@@ -456,6 +470,34 @@ export default class Goods extends React.PureComponent {
               });
             }
 
+            // 更改图片日志状态
+            const { file } = this.props.file;
+            goods.thumbs.forEach((i) => {
+              const f = file.results.find(j => j.thumbUrl === i);
+              if (f) {
+                oldThumbs = oldThumbs.filter(k => k !== i);
+                dispatch({
+                  type: 'file/coverFile',
+                  payload: {
+                    objectId: f.objectId,
+                    status: 'done',
+                  },
+                });
+              }
+            });
+            oldThumbs.forEach((i) => {
+              const f = file.results.find(j => j.thumbUrl === i);
+              if (f) {
+                dispatch({
+                  type: 'file/coverFile',
+                  payload: {
+                    objectId: f.objectId,
+                    status: 'removed',
+                  },
+                });
+              }
+            });
+
             this.props.history.goBack();
           });
         } else {
@@ -483,6 +525,23 @@ export default class Goods extends React.PureComponent {
                     },
                   },
                 });
+              });
+
+              // 更改图片日志状态
+              const { file } = this.props.file;
+              goods.thumbs.forEach((i) => {
+                const f = file.results.find(j => j.thumbUrl === i);
+                if (f) {
+                  dispatch({
+                    type: 'file/coverFile',
+                    payload: {
+                      objectId: f.objectId,
+                      pointerClassName: 'Goods',
+                      pointerObjectId: objectId,
+                      status: 'done',
+                    },
+                  });
+                }
               });
 
               this.props.history.goBack();

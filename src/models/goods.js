@@ -106,8 +106,6 @@ export default {
     *trashGoodsSku(_, { put }) {
       yield put({ type: 'emptyGoodsSku' });
     },
-
-
   },
 
   reducers: {

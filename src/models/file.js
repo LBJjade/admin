@@ -30,7 +30,7 @@ export default {
         message.error(`保存失败！${res.error}`, 5);
       } else {
         yield put({ type: 'resetFile', payload: { ...payload, ...res } });
-        message.success('保存成功！', 3);
+        // message.success('保存成功！', 3);
       }
     },
     *removeFile({ payload }, { call, put }) {
@@ -42,8 +42,9 @@ export default {
         message.success('删除成功！', 3);
       }
     },
-
-
+    *trashFile(_, { put }) {
+      yield put({ type: 'emptyFile' });
+    },
   },
 
   reducers: {
@@ -80,6 +81,14 @@ export default {
         ...state,
         file: {
           results: state.file.results.filter(item => item.objectId !== action.payload.objectId),
+        },
+      });
+    },
+    emptyFile(state) {
+      return ({
+        ...state,
+        file: {
+          results: [],
         },
       });
     },
