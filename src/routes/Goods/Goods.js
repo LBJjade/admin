@@ -58,6 +58,7 @@ export default class Goods extends React.PureComponent {
               objectId,
             },
           },
+          order: 'order',
         },
       });
     } else {
