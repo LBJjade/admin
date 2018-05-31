@@ -137,12 +137,20 @@ export default {
         message.error(`删除文件失败！${res.error}`, 10);
       }
     },
-    *storeUserAuth({ payload }, { call }) {
+    *storeUserAuth({ payload }, { call, put }) {
       const response = yield call(postUserAuth, payload);
       if (response.error) {
         message.success('提交失败');
+        yield put({
+          type: 'onAuth',
+          payload: response,
+        });
       } else {
         message.success('提交成功');
+        yield put({
+          type: 'onAuth',
+          payload: response,
+        });
       }
     },
     *fetchAddress({ payload }, { call, put }) {
@@ -235,6 +243,11 @@ export default {
       return {
         ...state,
         address: action.payload,
+      };
+    },
+    onAuth(state) {
+      return {
+        ...state,
       };
     },
   },
