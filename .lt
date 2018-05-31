@@ -106,6 +106,17 @@ clear$MODULE_NAME$(state, action) {
   });
 },
 
+*trash$MODULE_NAME$(_, { put }) {
+  yield put({ type: 'empty$MODULE_NAME$' });
+},
+
+empty$MODULE_NAME$(state) {
+  return ({
+    ...state,
+    $MODULE_NAME$: undefined,
+  });
+},
+
 
 
 

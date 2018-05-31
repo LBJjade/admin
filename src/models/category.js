@@ -1,13 +1,13 @@
 import { message } from 'antd';
 import { getCategory, postCategory, putCategory, deleteCategory } from '../services/goods';
-import { deleteFile } from '../services/file';
+import { deleteFileStorage } from '../services/file';
 
 export default {
   namespace: 'category',
 
   state: {
     loading: false,
-    data: {
+    category: {
       results: [],
       count: 0,
     },
@@ -57,7 +57,7 @@ export default {
     },
 
     *removeFile({ payload }, { call }) {
-      const res = yield call(deleteFile, payload);
+      const res = yield call(deleteFileStorage, payload);
       if (res.error) {
         message.error(`删除文件失败！${res.error}`, 10);
       }
@@ -74,7 +74,7 @@ export default {
     changeCategory(state, action) {
       return {
         ...state,
-        data: action.payload,
+        category: action.payload,
       };
     },
     changeCategorySpec(state, action) {
@@ -86,17 +86,17 @@ export default {
     appendCategory(state, action) {
       return ({
         ...state,
-        data: {
-          results: state.data.results.concat(action.payload).sort(),
-          count: state.data.count + 1,
+        category: {
+          results: state.category.results.concat(action.payload).sort(),
+          count: state.category.count + 1,
         },
       });
     },
     resetCategory(state, action) {
       return ({
         ...state,
-        data: {
-          results: state.data.results.map((item) => {
+        category: {
+          results: state.category.results.map((item) => {
             if (item.objectId === action.payload.objectId) {
               return { ...item, ...action.payload };
             } else {
@@ -109,9 +109,9 @@ export default {
     clearCategory(state, action) {
       return ({
         ...state,
-        data: {
-          results: state.data.results.filter(item => item.objectId !== action.payload.objectId),
-          count: state.data.count - 1,
+        category: {
+          results: state.category.results.filter(item => item.objectId !== action.payload.objectId),
+          count: state.category.count - 1,
         },
       });
     },

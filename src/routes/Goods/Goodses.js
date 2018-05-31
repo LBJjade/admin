@@ -1,19 +1,22 @@
 import React from 'react';
 import { connect } from 'dva';
 import { Link, routerRedux } from 'dva/router';
-import PropTypes from 'prop-types';
+// import PropTypes from 'prop-types';
 import { Row, Icon, Card } from 'antd';
 import PageHeaderLayout from '../../layouts/PageHeaderLayout';
 import HeaderSearch from '../../components/HeaderSearch';
-// import ImageCard from './Card/ImageCard';
 import GoodsCard from './Card/GoodsCard';
 import styles from './Goodses.less';
 
-@connect(({ goods }) => ({
+@connect(({ goods, group }) => ({
   goods,
+  group,
 }))
 export default class Goodses extends React.Component {
-  state = {};
+  state = {
+    limit: 9,
+    skip: 0,
+  };
 
   componentDidMount() {
     const { dispatch } = this.props;
@@ -21,15 +24,39 @@ export default class Goodses extends React.Component {
       type: 'goods/fetchGoodses',
       payload: {
         count: true,
-        limit: 6,
-        skip: 0,
+        limit: this.state.limit,
+        skip: this.state.skip,
+        include: 'pointerCategory',
+      },
+    });
+
+    dispatch({
+      type: 'group/fetchGroup',
+      payload: {
+        count: true,
       },
     });
   }
 
   handleClick = (item) => {
-    const url = `/goods/goods/${item.objectId}`;
-    this.props.dispatch(routerRedux.push(url));
+    const { dispatch } = this.props;
+    dispatch(routerRedux.push(`/goods/goods?${item.objectId}`));
+  };
+
+  handlePageChange = (page) => {
+    const skip = (page - 1) * this.state.limit;
+    const { dispatch } = this.props;
+    dispatch({
+      type: 'goods/fetchGoodses',
+      payload: {
+        count: true,
+        limit: this.state.limit,
+        skip,
+      },
+    });
+    this.setState({
+      skip,
+    });
   };
 
   render() {
@@ -55,6 +82,12 @@ export default class Goodses extends React.Component {
             <GoodsCard
               data={goodsesData}
               onClick={item => this.handleClick(item)}
+              pagination={{
+                onChange: page => this.handlePageChange(page),
+                pageSize: this.state.limit,
+                total: goodses.count,
+              }}
+              group={this.props.group.group}
             />
           </Row>
         </div>

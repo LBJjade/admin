@@ -32,19 +32,19 @@ const menuData = [{
       path: 'goodses',
     },
     {
-      name: '分类管理',
+      name: '商城类目',
       icon: 'bars',
       path: 'category',
     },
     {
-      name: '分组管理',
-      icon: 'bars',
-      path: 'group',
-    },
-    {
-      name: '规格模版',
+      name: '类目规格',
       icon: 'profile',
       path: 'spec',
+    },
+    {
+      name: '商城分类',
+      icon: 'bars',
+      path: 'group',
     },
   ],
 }, {

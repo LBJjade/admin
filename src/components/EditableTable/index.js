@@ -1,20 +1,12 @@
 import React from 'react';
-import { Table, Input, message, Divider, Popconfirm } from 'antd';
+import { Table, Input, InputNumber, Divider, Popconfirm } from 'antd';
 import styles from './index.less';
-
-/* column format
-columns = [{
-  title: i.name,
-  dataIndex: i.objectId,
-  key: i.objectId,
-  editable: true,
-}];
-*/
 
 class EditableTable extends React.PureComponent {
   state={
     loading: this.props.loading,
     dataKey: this.props.dataKey,
+    data: this.props.dataSource,
   };
 
   componentWillReceiveProps(nextProps) {
@@ -50,8 +42,12 @@ class EditableTable extends React.PureComponent {
   remove = (recorde) => {
     const newData = this.state.data.filter(item => item.key !== recorde.key);
     this.setState({ data: newData });
-    this.props.onRemoveRow(newData, recorde);
-    this.props.onChange(newData);
+    if (this.props.onRemoveRow) {
+      this.props.onRemoveRow(newData, recorde);
+    }
+    if (this.props.onChange) {
+      this.props.onChange(newData);
+    }
   };
 
   handleKeyPress = (e, recode) => {
@@ -118,6 +114,7 @@ class EditableTable extends React.PureComponent {
     this.clickedCancel = false;
   };
 
+
   render() {
     let { columns } = this.props;
     // const { dataSource } = this.props;
@@ -129,14 +126,26 @@ class EditableTable extends React.PureComponent {
       columns.map((col) => {
         col.render = (text, record) => {
           if (record.editable && col.editable) {
-            return (
-              <Input
-                style={{ width: 50 }}
-                value={text}
-                onChange={e => this.handleFieldChange(e, col.dataIndex, record.key)}
-                onKeyPress={e => this.handleKeyPress(e, record)}
-              />
-            );
+            if (col.type === 'number') {
+              return (
+                <InputNumber
+                  style={{ width: 50 }}
+                  value={text}
+                  onChange={e => this.handleFieldChange(e, col.dataIndex, record.key)}
+                  onKeyPress={e => this.handleKeyPress(e, record)}
+                  min={col.min}
+                />
+              );
+            } else {
+              return (
+                <Input
+                  style={{ width: 50 }}
+                  value={text}
+                  onChange={e => this.handleFieldChange(e, col.dataIndex, record.key)}
+                  onKeyPress={e => this.handleKeyPress(e, record)}
+                />
+              );
+            }
           }
           return text;
         };
@@ -186,7 +195,7 @@ class EditableTable extends React.PureComponent {
       },
     ];
 
-    if (columns) {
+    if (columns && columns.length) {
       columns = columns.concat(columnAction);
     }
 
@@ -201,6 +210,7 @@ class EditableTable extends React.PureComponent {
           rowClassName={(record) => {
             return record.editable ? styles.editable : '';
           }}
+          onChange={this.props.onChange}
         />
       </div>
     );

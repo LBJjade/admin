@@ -1,7 +1,7 @@
 import { message } from 'antd';
 import { getUsers, getUser, getUserMe, getVerifyEmail, putUser, getFunctionClientip, postUserAuth, getAddress } from '../services/account';
 import { getNotices, putNotice } from '../services/notice';
-import { deleteFile } from '../services/file';
+import { deleteFileStorage } from '../services/file';
 import store from '../index';
 
 export default {
@@ -132,7 +132,7 @@ export default {
       yield put({ type: 'changeLoading', payload: false });
     },
     *removeFile({ payload }, { call }) {
-      const res = yield call(deleteFile, payload);
+      const res = yield call(deleteFileStorage, payload);
       if (res.error) {
         message.error(`删除文件失败！${res.error}`, 10);
       }

@@ -3,7 +3,7 @@ import React from 'react';
 import { connect } from 'dva';
 import { Card, Row, Col, Form, Input, Upload, Icon, message, Button, TreeSelect, Switch, Divider, Dropdown, Menu, Modal, Affix, Tooltip } from 'antd';
 import moment from 'moment';
-import SortableTree, { getFlatDataFromTree } from 'react-sortable-tree';
+import SortableTree from 'react-sortable-tree';
 import 'react-sortable-tree/style.css';
 import PageHeaderLayout from '../../layouts/PageHeaderLayout';
 import styles from './Category.less';
@@ -36,7 +36,6 @@ export default class Category extends React.PureComponent {
       // }],
       fileList: [],
     },
-    specData: [],
   };
 
   componentWillMount() {
@@ -58,12 +57,9 @@ export default class Category extends React.PureComponent {
   }
 
   componentWillReceiveProps(nextProps) {
-    if (nextProps.category.data) {
-      const data = nextProps.category.data.results.sort((a, b) => (a.pathIndex > b.pathIndex ? 1 : -1))
+    if (nextProps.category.category) {
+      const data = nextProps.category.category.results.sort((a, b) => (a.pathIndex > b.pathIndex ? 1 : -1))
       this.setState({ treeData: this.Tree(data) });
-    }
-    if (nextProps.spec.data) {
-      this.setState({ specData: this.Tree(nextProps.spec.data.results) });
     }
   }
 
@@ -118,7 +114,7 @@ export default class Category extends React.PureComponent {
   handleAddChildNode = (e, rowInfo) => {
     if (!this.state.editing) {
       if (rowInfo.path.length >= globalConfig.categoryPathLimit) {
-        message.warn(`只支持${globalConfig.categoryPathLimit}级分类信息，禁止再新建子级！`);
+        message.warn(`只支持${globalConfig.categoryPathLimit}级类目信息，禁止再新建子级！`);
         return;
       }
 
@@ -191,7 +187,7 @@ export default class Category extends React.PureComponent {
     const deleteNode = rowInfo.node;
     const file = deleteNode.thumb;
     if (deleteNode.children) {
-      message.warn('此分类存在子分类，禁止删除！', 5);
+      message.warn('此类目存在子类目，禁止删除！', 5);
     } else {
       const { dispatch } = this.props;
       dispatch({
@@ -221,7 +217,7 @@ export default class Category extends React.PureComponent {
   // Called after node move operation.
   // ({ treeData: object[], node: object, nextParentNode: object, prevPath: number[] or string[], prevTreeIndex: number, nextPath: number[] or string[], nextTreeIndex: number }): void
   handleMoveNode = (data) => {
-    const { treeData, node, nextParentNode } = data;
+    const { node, nextParentNode } = data;
     const { dispatch } = this.props;
     const parentObjectId = node.pointerCategory ? node.pointerCategory.objectId || '' : '';
     const nextParentObjectId = nextParentNode ? nextParentNode.objectId || '' : '';
@@ -278,51 +274,7 @@ export default class Category extends React.PureComponent {
     });
   };
 
-  // handleSort = () => {
-  //   const { dispatch } = this.props;
-  //   const { treeData } = this.state;
-  //   const { data } = this.props;
-  //   const flatData = getFlatDataFromTree({
-  //     treeData: this.state.treeData,
-  //     getKey: node => node.objectId,
-  //     getParentKey: node => node.pointerCategory.objectId,
-  //     getNodeKey: ({ treeIndex }) => treeIndex,
-  //   });
-  //   flatData.forEach((item, index, items) => {
-  //     const treePath = item.path ? item.path.toString() : '';
-  //     const dataPath = item.node.path ? item.node.path.toString() : '';
-  //
-  //     const node = item
-  //
-  //     if (item.node.objectId) {
-  //       dispatch({
-  //         type: 'category/coverCategory',
-  //         payload: {
-  //           objectId: item.node.objectId,
-  //           path: item.path,
-  //           pathLevel: item.path.length,
-  //           pathIndex: item.treeIndex,
-  //         },
-  //       });
-  //       if (item.children) {
-  //         item.children.forEach((child, childIndex, children) => {
-  //           dispatch({
-  //             type: 'category/coverCategory',
-  //             payload: {
-  //               objectId: item.children.node.objectId,
-  //               path: item.children.path,
-  //               pathLevel: item.children.path.length,
-  //               pathIndex: item.children.treeIndex,
-  //             },
-  //           });
-  //         });
-  //       }
-  //     }
-  //   });
-  // };
-
-
-  handleSubmit = (e) => {
+  handleOK = (e) => {
     e.preventDefault();
     this.props.form.validateFields({ force: true }, (err, values) => {
       if (err === null || !err) {
@@ -397,8 +349,8 @@ export default class Category extends React.PureComponent {
         break;
       case 'delete':
         Modal.confirm({
-          title: '确认删除该分类吗？',
-          content: '确认删除将不可恢复；建议设置停用分类。',
+          title: '确认删除该类目吗？',
+          content: '确认删除将不可恢复；建议设置停用类目。',
           okText: '确定',
           cancelText: '取消',
           okType: 'danger',
@@ -426,7 +378,7 @@ export default class Category extends React.PureComponent {
   };
 
   handleImgChange = ({ fileList }) => {
-    this.setState({ img: { fileList: fileList } });
+    this.setState({ img: { fileList } });
   };
 
   handleImgRemove = (file) => {
@@ -453,15 +405,12 @@ export default class Category extends React.PureComponent {
     if (!isJPG) {
       message.error('只能上传图片文件！');
     }
-    // const isLt2M = file.size / 1024 / 1024 < 2;
-    // if (!isLt2M) {
-    //   message.error('Image must smaller than 2MB!');
-    // }
-    const isLt2M = file.size / 1024 / 1024 < 1;
-    if (!isLt2M) {
-      message.error('图片大小必须小于1MB！');
+    const isImageLimit = file.size < globalConfig.imageLimit;
+    if (!isImageLimit) {
+      const limit = (globalConfig.imageLimit / 1024 / 1024, 1).round(1).toString();
+      message.error(`图片大小必须小于${limit}MB！`);
     }
-    return isJPG && isLt2M;
+    return isJPG && isImageLimit;
   };
 
   handleImgCustomRequest = ({ onSuccess, onError, file }) => {
@@ -555,23 +504,21 @@ export default class Category extends React.PureComponent {
 
   render() {
     const { getFieldDecorator } = this.props.form;
-    const { data } = this.props.category;
-    const categorys = this.Tree(data.results);
+    const categorys = this.Tree(this.props.category.category.results);
     const categorysSelect = [{
-      label: '商品分类',
+      label: '顶级类目',
       key: 'top',
       value: '',
       children: categorys,
     }];
     const { editing, adding, selectedNode } = this.state;
 
-    const specData = this.props.spec.data;
-    const specs = this.Tree(specData.results, 'pointerSpec');
+    const specs = this.Tree(this.props.spec.spec.results, 'pointerSpec');
 
     // Img
     const { previewVisible, previewImage, fileList } = this.state.img;
 
-    let title = '编辑分类';
+    let title = '编辑类目';
     let category = {
       objectId: '',
       name: '',
@@ -593,7 +540,7 @@ export default class Category extends React.PureComponent {
           enabled: true,
           categorySpec: [],
         };
-        title = '新建分类';
+        title = '新建类目';
         break;
       case 'brother':
         category = {
@@ -605,7 +552,7 @@ export default class Category extends React.PureComponent {
           enabled: true,
           categorySpec: [],
         };
-        title = '新建分类';
+        title = '新建类目';
         break;
       default:
         category = {
@@ -622,7 +569,7 @@ export default class Category extends React.PureComponent {
 
     const uploadButton = (
       <Tooltip
-        title="父分类图尺寸366 x 120，<br>子分类图尺寸48 x 48"
+        title="父类目图尺寸366 x 120，<br>子类目图尺寸48 x 48"
         placement="rightTop"
       >
         <div>
@@ -640,16 +587,15 @@ export default class Category extends React.PureComponent {
           onClick={e => this.handleAddBrotherNode(e, null)}
           icon="plus"
         >
-          新建分类
+          新建类目
         </Button>
       </div>
     );
 
     return (
       <PageHeaderLayout
-        title="分类管理"
-        // logo={<img alt="" src="https://gw.alipayobjects.com/zos/rmsportal/nxkuOJlFJuAUhzlMTCEe.png" />}
-        // content="所有商品需归纳分类，提供分类信息的维护及管理。"
+        title="商城类目"
+        content="商城所有商品需进行统一归类，并指定类目的规格。"
       >
         <Row gutter={24}>
           <Col xl={12} lg={24} md={24} sm={24} xs={24}>
@@ -658,10 +604,6 @@ export default class Category extends React.PureComponent {
                 { categorys.length <= 0 ? newButton : '' }
                 <div style={{
                   height: 570,
-                  // overflow: 'scroll',
-                  // background: '#fff',
-                  // padding: 10,
-                  // margin: 10,
                 }}
                 >
                   <SortableTree
@@ -673,7 +615,6 @@ export default class Category extends React.PureComponent {
                         onClick: event => this.handleClickNode(event, rowInfo),
                         buttons: [
                           <Dropdown
-                            // trigger={['click']}
                             overlay={(
                               <Menu onClick={menu => this.handleClickMenu(menu, rowInfo)}>
                                 <Menu.Item key="edit">
@@ -716,7 +657,7 @@ export default class Category extends React.PureComponent {
               className={styles.card}
               hidden={!editing}
             >
-              <Form onSubmit={this.handleSubmit}>
+              <Form>
                 <Form.Item>
                   {getFieldDecorator('objectId', {
                     initialValue: category.objectId,
@@ -724,34 +665,36 @@ export default class Category extends React.PureComponent {
                     <Input hidden />
                   )}
                 </Form.Item>
-                <Form.Item label="父级分类" labelCol={{ span: 6 }} wrapperCol={{ span: 16 }} >
+                <Form.Item label="父级类目" labelCol={{ span: 6 }} wrapperCol={{ span: 16 }} >
                   {getFieldDecorator('pointerCategory', {
                     initialValue: category.pointerCategory,
                   })(
-                    <TreeSelect treeData={categorysSelect} placeholder="请选择父级分类" disabled />
+                    <TreeSelect treeData={categorysSelect} placeholder="请选择父级类目" disabled />
                   )}
                 </Form.Item>
                 <Divider dashed />
-                <Form.Item label="分类名称" labelCol={{ span: 6 }} wrapperCol={{ span: 16 }}>
+                <Form.Item label="类目名称" labelCol={{ span: 6 }} wrapperCol={{ span: 16 }}>
                   {getFieldDecorator('name', {
                     initialValue: category.name,
+                    rules: [
+                      { required: true, message: '请输入类目名称！' },
+                    ],
                   })(
-                    <Input placeholder="请输入分类名称" />
+                    <Input placeholder="请输入类目名称" />
                   )}
                 </Form.Item>
-                <Form.Item label="分类描述" labelCol={{ span: 6 }} wrapperCol={{ span: 16 }}>
+                <Form.Item label="类目描述" labelCol={{ span: 6 }} wrapperCol={{ span: 16 }}>
                   {getFieldDecorator('description', {
                     initialValue: category.description,
                   })(
                     <Input.TextArea autosize={{ minRows: 2, maxRows: 5 }} />
                   )}
                 </Form.Item>
-                <Form.Item label="分类图片" labelCol={{ span: 6 }} wrapperCol={{ span: 16 }}>
+                <Form.Item label="类目图片" labelCol={{ span: 6 }} wrapperCol={{ span: 16 }}>
                   <Upload
                     name="thumb"
                     accept="image/*"
                     listType="picture-card"
-                    // showUploadList={false}
                     className={styles.uploader}
                     beforeUpload={this.handleImgBeforeUpload}
                     customRequest={this.handleImgCustomRequest}
@@ -761,9 +704,6 @@ export default class Category extends React.PureComponent {
                     onChange={this.handleImgChange}
                     onRemove={this.handleImgRemove}
                   >
-                    {
-                      // category.thumb ? <img src={category.thumb} alt="" style={{ width: 80, height: 80 }} /> : uploadButton
-                    }
                     {fileList && fileList.length >= 1 ? null : uploadButton}
                   </Upload>
                   <Modal visible={previewVisible} footer={null} onCancel={() => this.handleImgCancel()}>
@@ -779,7 +719,7 @@ export default class Category extends React.PureComponent {
                   )}
                 </Form.Item>
                 <Divider dashed />
-                <Form.Item label="分类规格" labelCol={{ span: 6 }} wrapperCol={{ span: 16 }} >
+                <Form.Item label="类目规格" labelCol={{ span: 6 }} wrapperCol={{ span: 16 }} >
                   {getFieldDecorator('categorySpec', {
                     valuePropName: 'value',
                     initialValue: category.categorySpec,
@@ -788,16 +728,14 @@ export default class Category extends React.PureComponent {
                       treeData={specs}
                       treeCheckable
                       allowClear
-                      // showCheckedStrategy={TreeSelect.SHOW_PARENT}
                       showCheckedStrategy={TreeSelect.SHOW_CHILD}
-                      // showCheckedStrategy={TreeSelect.SHOW_ALL}
-                      placeholder="请选择分类规格"
+                      placeholder="请选择类目规格"
                     />
                   )}
                 </Form.Item>
                 <Form.Item wrapperCol={{ span: 20, offset: 12 }}>
                   <Button type="default" htmlType="button" onClick={e => this.handleCancelEdit(e)} >取消</Button>
-                  <Button type="primary" htmlType="submit" >保存</Button>
+                  <Button type="primary" htmlType="button" onClick={e => this.handleOK(e)} >保存</Button>
                 </Form.Item>
               </Form>
             </Card>

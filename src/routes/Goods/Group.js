@@ -3,7 +3,7 @@ import React from 'react';
 import { connect } from 'dva';
 import { Card, Row, Col, Form, Input, Upload, Icon, message, Button, TreeSelect, Switch, Divider, Dropdown, Menu, Modal, Affix, Tooltip } from 'antd';
 import moment from 'moment';
-import SortableTree, { getFlatDataFromTree } from 'react-sortable-tree';
+import SortableTree from 'react-sortable-tree';
 import 'react-sortable-tree/style.css';
 import PageHeaderLayout from '../../layouts/PageHeaderLayout';
 import styles from './Group.less';
@@ -49,8 +49,8 @@ export default class Group extends React.PureComponent {
 
   componentWillReceiveProps(nextProps) {
     if (nextProps.group.group) {
-      const groups = nextProps.group.group.results.sort((a, b) => (a.pathIndex > b.pathIndex ? 1 : -1));
-      this.setState({ treeData: this.Tree(groups) });
+      const data = nextProps.group.group.results.sort((a, b) => (a.pathIndex > b.pathIndex ? 1 : -1))
+      this.setState({ treeData: this.Tree(data) });
     }
   }
 
@@ -105,7 +105,7 @@ export default class Group extends React.PureComponent {
   handleAddChildNode = (e, rowInfo) => {
     if (!this.state.editing) {
       if (rowInfo.path.length >= globalConfig.groupPathLimit) {
-        message.warn(`只支持${globalConfig.groupPathLimit}级分组信息，禁止再新建子级！`);
+        message.warn(`只支持${globalConfig.groupPathLimit}级分类信息，禁止再新建子级！`);
         return;
       }
 
@@ -178,7 +178,7 @@ export default class Group extends React.PureComponent {
     const deleteNode = rowInfo.node;
     const file = deleteNode.thumb;
     if (deleteNode.children) {
-      message.warn('此分组存在子分组，禁止删除！', 5);
+      message.warn('此分类存在子分类，禁止删除！', 5);
     } else {
       const { dispatch } = this.props;
       dispatch({
@@ -208,7 +208,7 @@ export default class Group extends React.PureComponent {
   // Called after node move operation.
   // ({ treeData: object[], node: object, nextParentNode: object, prevPath: number[] or string[], prevTreeIndex: number, nextPath: number[] or string[], nextTreeIndex: number }): void
   handleMoveNode = (data) => {
-    const { treeData, node, nextParentNode } = data;
+    const { node, nextParentNode } = data;
     const { dispatch } = this.props;
     const parentObjectId = node.pointerGroup ? node.pointerGroup.objectId || '' : '';
     const nextParentObjectId = nextParentNode ? nextParentNode.objectId || '' : '';
@@ -265,7 +265,7 @@ export default class Group extends React.PureComponent {
     });
   };
 
-  handleSubmit = (e) => {
+  handleOK = (e) => {
     e.preventDefault();
     this.props.form.validateFields({ force: true }, (err, values) => {
       if (err === null || !err) {
@@ -340,8 +340,8 @@ export default class Group extends React.PureComponent {
         break;
       case 'delete':
         Modal.confirm({
-          title: '确认删除该分组吗？',
-          content: '确认删除将不可恢复；建议设置停用分组。',
+          title: '确认删除该分类吗？',
+          content: '确认删除将不可恢复；建议设置停用分类。',
           okText: '确定',
           cancelText: '取消',
           okType: 'danger',
@@ -369,7 +369,7 @@ export default class Group extends React.PureComponent {
   };
 
   handleImgChange = ({ fileList }) => {
-    this.setState({ img: { fileList: fileList } });
+    this.setState({ img: { fileList } });
   };
 
   handleImgRemove = (file) => {
@@ -396,15 +396,28 @@ export default class Group extends React.PureComponent {
     if (!isJPG) {
       message.error('只能上传图片文件！');
     }
-    const isLimit = file.size < globalConfig.imageLimit;
-    if (!isLimit) {
-      message.error('图片大小必须小于1MB！');
+    const isImageLimit = file.size < globalConfig.imageLimit;
+    if (!isImageLimit) {
+      const limit = (globalConfig.imageLimit / 1024 / 1024, 1).round(1).toString();
+      message.error(`图片大小必须小于${limit}MB！`);
     }
-    return isJPG && isLimit;
+    return isJPG && isImageLimit;
   };
 
   handleImgCustomRequest = ({ onSuccess, onError, file }) => {
     const reader = new FileReader();
+
+    reader.onloadstart = () => {
+      // 这个事件在读取开始时触发
+    };
+
+    // reader.onprogress = (p) => {
+    //   // 这个事件在读取进行中定时触发
+    // };
+
+    reader.onload = () => {
+      // 这个事件在读取成功结束后触发
+    };
 
     reader.onloadend = () => {
       // 这个事件在读取结束后，无论成功或者失败都会触发
@@ -484,7 +497,7 @@ export default class Group extends React.PureComponent {
     const { getFieldDecorator } = this.props.form;
     const groups = this.Tree(this.props.group.group.results);
     const groupsSelect = [{
-      label: '商品分组',
+      label: '顶级分类',
       key: 'top',
       value: '',
       children: groups,
@@ -494,7 +507,7 @@ export default class Group extends React.PureComponent {
     // Img
     const { previewVisible, previewImage, fileList } = this.state.img;
 
-    let title = '编辑分组';
+    let title = '编辑分类';
     let group = {
       objectId: '',
       name: '',
@@ -502,7 +515,6 @@ export default class Group extends React.PureComponent {
       thumb: '',
       description: '',
       enabled: true,
-      relationSpec: [],
     };
 
     switch (adding) {
@@ -515,7 +527,7 @@ export default class Group extends React.PureComponent {
           description: '',
           enabled: true,
         };
-        title = '新建分组';
+        title = '新建分类';
         break;
       case 'brother':
         group = {
@@ -526,7 +538,7 @@ export default class Group extends React.PureComponent {
           description: '',
           enabled: true,
         };
-        title = '新建分组';
+        title = '新建分类';
         break;
       default:
         group = {
@@ -542,7 +554,7 @@ export default class Group extends React.PureComponent {
 
     const uploadButton = (
       <Tooltip
-        title="父分组图尺寸366 x 120，<br>子分组图尺寸48 x 48"
+        title="父分类图尺寸366 x 120，<br>子分类图尺寸48 x 48"
         placement="rightTop"
       >
         <div>
@@ -560,16 +572,15 @@ export default class Group extends React.PureComponent {
           onClick={e => this.handleAddBrotherNode(e, null)}
           icon="plus"
         >
-          新建分组
+          新建分类
         </Button>
       </div>
     );
 
     return (
       <PageHeaderLayout
-        title="分组管理"
-        // logo={<img alt="" src="https://gw.alipayobjects.com/zos/rmsportal/nxkuOJlFJuAUhzlMTCEe.png" />}
-        // content="所有商品需归纳分组，提供分组信息的维护及管理。"
+        title="商城分类"
+        content="商城的所有商品进行分类定义，在商城平台按分类进行商品展示。"
       >
         <Row gutter={24}>
           <Col xl={12} lg={24} md={24} sm={24} xs={24}>
@@ -589,7 +600,6 @@ export default class Group extends React.PureComponent {
                         onClick: event => this.handleClickNode(event, rowInfo),
                         buttons: [
                           <Dropdown
-                            // trigger={['click']}
                             overlay={(
                               <Menu onClick={menu => this.handleClickMenu(menu, rowInfo)}>
                                 <Menu.Item key="edit">
@@ -632,7 +642,7 @@ export default class Group extends React.PureComponent {
               className={styles.card}
               hidden={!editing}
             >
-              <Form onSubmit={this.handleSubmit}>
+              <Form>
                 <Form.Item>
                   {getFieldDecorator('objectId', {
                     initialValue: group.objectId,
@@ -640,34 +650,33 @@ export default class Group extends React.PureComponent {
                     <Input hidden />
                   )}
                 </Form.Item>
-                <Form.Item label="父级分组" labelCol={{ span: 6 }} wrapperCol={{ span: 16 }} >
+                <Form.Item label="父级分类" labelCol={{ span: 6 }} wrapperCol={{ span: 16 }} >
                   {getFieldDecorator('pointerGroup', {
                     initialValue: group.pointerGroup,
                   })(
-                    <TreeSelect treeData={groupsSelect} placeholder="请选择父级分组" disabled />
+                    <TreeSelect treeData={groupsSelect} placeholder="请选择父级分类" disabled />
                   )}
                 </Form.Item>
                 <Divider dashed />
-                <Form.Item label="分组名称" labelCol={{ span: 6 }} wrapperCol={{ span: 16 }}>
+                <Form.Item label="分类名称" labelCol={{ span: 6 }} wrapperCol={{ span: 16 }}>
                   {getFieldDecorator('name', {
                     initialValue: group.name,
                   })(
-                    <Input placeholder="请输入分组名称" />
+                    <Input placeholder="请输入分类名称" />
                   )}
                 </Form.Item>
-                <Form.Item label="分组描述" labelCol={{ span: 6 }} wrapperCol={{ span: 16 }}>
+                <Form.Item label="分类描述" labelCol={{ span: 6 }} wrapperCol={{ span: 16 }}>
                   {getFieldDecorator('description', {
                     initialValue: group.description,
                   })(
                     <Input.TextArea autosize={{ minRows: 2, maxRows: 5 }} />
                   )}
                 </Form.Item>
-                <Form.Item label="分组图片" labelCol={{ span: 6 }} wrapperCol={{ span: 16 }}>
+                <Form.Item label="分类图片" labelCol={{ span: 6 }} wrapperCol={{ span: 16 }}>
                   <Upload
                     name="thumb"
                     accept="image/*"
                     listType="picture-card"
-                    // showUploadList={false}
                     className={styles.uploader}
                     beforeUpload={this.handleImgBeforeUpload}
                     customRequest={this.handleImgCustomRequest}
@@ -677,9 +686,6 @@ export default class Group extends React.PureComponent {
                     onChange={this.handleImgChange}
                     onRemove={this.handleImgRemove}
                   >
-                    {
-                      // group.thumb ? <img src={group.thumb} alt="" style={{ width: 80, height: 80 }} /> : uploadButton
-                    }
                     {fileList && fileList.length >= 1 ? null : uploadButton}
                   </Upload>
                   <Modal visible={previewVisible} footer={null} onCancel={() => this.handleImgCancel()}>
@@ -697,7 +703,7 @@ export default class Group extends React.PureComponent {
                 <Divider dashed />
                 <Form.Item wrapperCol={{ span: 20, offset: 12 }}>
                   <Button type="default" htmlType="button" onClick={e => this.handleCancelEdit(e)} >取消</Button>
-                  <Button type="primary" htmlType="submit" >保存</Button>
+                  <Button type="primary" htmlType="button" onClick={e => this.handleOK(e)} >保存</Button>
                 </Form.Item>
               </Form>
             </Card>

@@ -126,9 +126,15 @@ export async function deleteGroup(params) {
 }
 
 // Goods API
-export async function getGoods(params) {
+export async function getGoodses(params) {
   const url = requestParams2Url(params);
   return request(`/api/classes/Goods${url}`, {
+    method: 'GET',
+  });
+}
+
+export async function getGoods(params) {
+  return request(`/api/classes/Goods/${params.objectId}`, {
     method: 'GET',
   });
 }
@@ -156,10 +162,33 @@ export async function deleteGoods(params) {
   });
 }
 
-// GoodsImage API
-export async function getGoodsImage(params) {
+// GoodsSku API
+export async function getGoodsSku(params) {
   const url = requestParams2Url(params);
-  return request(`/api/classes/GoodsImage${url}`, {
+  return request(`/api/classes/GoodsSku${url}`, {
     method: 'GET',
+  });
+}
+
+export async function postGoodsSku(params) {
+  return request('/api/classes/GoodsSku', {
+    method: 'POST',
+    body: params,
+  });
+}
+
+export async function putGoodsSku(params) {
+  const param = _.clone(params);
+  const { objectId } = param;
+  delete param.objectId;
+  return request(`/api/classes/GoodsSku/${objectId}`, {
+    method: 'PUT',
+    body: param,
+  });
+}
+
+export async function deleteGoodsSku(params) {
+  return request(`/api/classes/GoodsSku/${params.objectId}`, {
+    method: 'DELETE',
   });
 }
