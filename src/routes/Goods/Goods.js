@@ -4,9 +4,11 @@ import { connect } from 'dva';
 import _ from 'lodash';
 import { Link } from 'dva/router';
 import { Card, Input, InputNumber, Switch, Button, Form, TreeSelect, Radio, Checkbox, Select, Spin } from 'antd';
-import { EditorState } from 'draft-js';
+import { EditorState, convertToRaw, ContentState } from 'draft-js';
 import { Editor } from 'react-draft-wysiwyg';
 import 'react-draft-wysiwyg/dist/react-draft-wysiwyg.css';
+import htmlToDraft from 'html-to-draftjs';
+import draftToHtml from 'draftjs-to-html';
 import PageHeaderLayout from '../../layouts/PageHeaderLayout';
 import FooterToolbar from '../../components/FooterToolbar';
 import styles from './Goods.less';
@@ -112,6 +114,15 @@ export default class Goods extends React.PureComponent {
       this.setState({ price: goods && goods.price ? goods.price : 0 });
       this.setState({ weight: goods && goods.weight ? goods.weight : 0 });
       this.setState({ stock: goods && goods.stock ? goods.stock : 0 });
+
+      if (goods && goods.content) {
+        const contentBlock = htmlToDraft(goods.content);
+        if (contentBlock) {
+          const contentState = ContentState.createFromBlockArray(contentBlock.contentBlocks);
+          const editorState = EditorState.createWithContent(contentState);
+          this.setState({ editorState });
+        }
+      }
     }
 
     if (nextProps.goods.goodsSku !== this.props.goods.goodsSku) {
@@ -198,7 +209,7 @@ export default class Goods extends React.PureComponent {
     return val;
   };
 
-  handleChange = (editorState) => {
+  handleContentChange = (editorState) => {
     this.setState({ editorState });
   };
 
@@ -984,7 +995,7 @@ export default class Goods extends React.PureComponent {
                       </Form.Item>
                       <Form.Item
                         {...formItemLayout}
-                        label="详细描述"
+                        label="商品详情"
                       >
                         <Editor
                           // https://jpuri.github.io/react-draft-wysiwyg/#/docs
@@ -997,9 +1008,20 @@ export default class Goods extends React.PureComponent {
                           toolbar={{
                             options: ['inline', 'blockType', 'fontSize', 'fontFamily', 'list', 'textAlign', 'colorPicker', 'link', 'embedded', 'emoji', 'image', 'remove', 'history'],
                           }}
-                          onEditorStateChange={this.handleChange}
+                          onEditorStateChange={this.handleContentChange}
                           editorStyle={{ height: 360, border: 1, borderStyle: 'solid', borderColor: '#ccc' }}
                         />
+                      </Form.Item>
+                      <Form.Item>
+                        {getFieldDecorator('content', {
+                          initialValue: draftToHtml(convertToRaw(editorState.getCurrentContent())),
+                        })(
+                          <textarea
+                            style={{ width: 500 }}
+                            disabled
+                            hidden
+                          />
+                        )}
                       </Form.Item>
                     </Card>
                   </Form>
