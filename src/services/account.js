@@ -66,16 +66,38 @@ export async function getVerifyEmail(params) {
   });
 }
 
+export async function getUserAuth(params) {
+  return request(`/api/classes/UserAuth?${stringify(params)}`, {
+    method: 'GET',
+  });
+}
+
 export async function postUserAuth(params) {
   if (params.tags !== undefined) {
     const tag = params.tags.join(',');
     params.values.tags = tag;
+  }
+  if (params.pointerUser !== undefined) {
+    params.values.pointerUser = params.pointerUser;
   }
   return request('/api/classes/UserAuth', {
     method: 'POST',
     body: params.values,
   });
 }
+
+export async function putUserAuth(params) {
+  const editid = params.objectId;
+  if (params.tags !== undefined) {
+    const tag = params.tags.join(',');
+    params.values.tags = tag;
+  }
+  return request(`/api/classes/UserAuth/${editid}`, {
+    method: 'PUT',
+    body: params.values,
+  });
+}
+
 
 export async function getAddress(params) {
   return request(`/api/classes/Address${requestParams2Url(params)}`, {

@@ -1,5 +1,5 @@
 import { message } from 'antd';
-import { getUsers, getUser, getUserMe, getVerifyEmail, putUser, getFunctionClientip, postUserAuth, getAddress } from '../services/account';
+import { getUsers, getUser, getUserMe, getVerifyEmail, putUser, getFunctionClientip, getUserAuth, putUserAuth, postUserAuth, getAddress } from '../services/account';
 import { getNotices, putNotice } from '../services/notice';
 import { deleteFileStorage } from '../services/file';
 import store from '../index';
@@ -19,6 +19,7 @@ export default {
       results: {},
     },
     user: {},
+    auth: {},
   },
 
   effects: {
@@ -137,6 +138,38 @@ export default {
         message.error(`删除文件失败！${res.error}`, 10);
       }
     },
+    *fetchUserAuth({ payload }, { call, put }) {
+      const response = yield call(getUserAuth, payload);
+      if (response.error) {
+        // message.success('提交失败');
+        yield put({
+          type: 'thisAuth',
+          payload: response,
+        });
+      } else {
+        // message.success('提交成功');
+        yield put({
+          type: 'thisAuth',
+          payload: response,
+        });
+      }
+    },
+    *coverUserAuth({ payload }, { call, put }) {
+      const response = yield call(putUserAuth, payload);
+      if (response.error) {
+        message.success('提交失败');
+        yield put({
+          type: 'onAuth',
+          payload: response,
+        });
+      } else {
+        message.success('提交成功');
+        yield put({
+          type: 'onAuth',
+          payload: response,
+        });
+      }
+    },
     *storeUserAuth({ payload }, { call, put }) {
       const response = yield call(postUserAuth, payload);
       if (response.error) {
@@ -243,6 +276,12 @@ export default {
       return {
         ...state,
         address: action.payload,
+      };
+    },
+    thisAuth(state, action) {
+      return {
+        ...state,
+        auth: action.payload.results[0],
       };
     },
     onAuth(state) {

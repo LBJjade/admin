@@ -14,9 +14,8 @@ const { TextArea } = Input;
 }))
 @Form.create()
 export default class BasicForms extends PureComponent {
-  // state = {
-  //   onAuth: 0,
-  // };
+  state = {
+  };
   componentDidMount() {
     // const id = localStorage.getItem('currentUserId');
     const { dispatch } = this.props;
@@ -25,6 +24,18 @@ export default class BasicForms extends PureComponent {
       payload: {
         where: {
           objectId: this.props.match.params.id,
+        },
+      },
+    });
+    dispatch({
+      type: 'account/fetchUserAuth',
+      payload: {
+        where: {
+          pointerUser: {
+            __type: 'Pointer',
+            className: '_User',
+            objectId: this.props.match.params.id,
+          },
         },
       },
     });
@@ -41,25 +52,47 @@ export default class BasicForms extends PureComponent {
       },
     });
   }
-  handleSubmit = (e) => {
+  handleSubmit = (e, id) => {
     const { dispatch } = this.props;
     e.preventDefault();
-    this.props.form.validateFields((err, values) => {
-      if (!err) {
-        dispatch({
-          type: 'account/storeUserAuth',
-          payload: {
-            values,
-            tags: values.tags,
-          },
-        }).then(() => {
-          dispatch(routerRedux.push('/system/user'));
-        });
-      }
-    });
+    if (id !== '') {
+      this.props.form.validateFields((err, values) => {
+        if (!err) {
+          dispatch({
+            type: 'account/coverUserAuth',
+            payload: {
+              values,
+              tags: values.tags,
+              objectId: id,
+            },
+          }).then(() => {
+            dispatch(routerRedux.push('/system/user'));
+          });
+        }
+      });
+    } else {
+      this.props.form.validateFields((err, values) => {
+        if (!err) {
+          dispatch({
+            type: 'account/storeUserAuth',
+            payload: {
+              values,
+              tags: values.tags,
+              pointerUser: {
+                __type: 'Pointer',
+                className: '_User',
+                objectId: this.props.match.params.id,
+              },
+            },
+          }).then(() => {
+            dispatch(routerRedux.push('/system/user'));
+          });
+        }
+      });
+    }
   }
   render() {
-    const { account: { user, address } } = this.props;
+    const { account: { user, address, auth } } = this.props;
     const { getFieldDecorator } = this.props.form;
     const formItemLayout = {
       labelCol: {
@@ -104,7 +137,7 @@ export default class BasicForms extends PureComponent {
                   label="会员类型"
                 >
                   {(
-                    <Tag color="red">未认证</Tag>
+                    auth === undefined ? <Tag color="red">未认证</Tag> : <Tag color="blue">已认证</Tag>
                         )}
                 </FormItem>
                 <FormItem
@@ -230,6 +263,7 @@ export default class BasicForms extends PureComponent {
                             }],
                             validateFirst: true,
                             validateTrigger: 'onBlur',
+                            initialValue: auth === undefined ? '' : auth.authName,
                           })(
                             <Input
                               placeholder="请输入认证姓名"
@@ -248,6 +282,7 @@ export default class BasicForms extends PureComponent {
                             ],
                             validateFirst: true,
                             validateTrigger: 'onBlur',
+                            initialValue: auth === undefined ? '' : auth.indentityCard,
                           })(
                             <Input
                               placeholder="请输入身份证号"
@@ -275,6 +310,7 @@ export default class BasicForms extends PureComponent {
                             ],
                             validateFirst: true,
                             validateTrigger: 'onBlur',
+                            initialValue: auth === undefined ? '' : auth.mobile,
                           })(
                             <Input
                               placeholder="请输入联系手机"
@@ -287,6 +323,7 @@ export default class BasicForms extends PureComponent {
                   label="联系电话"
                 >
                   {getFieldDecorator('tel', {
+                            initialValue: auth === undefined ? '' : auth.tel,
                           })(
                             <Input
                               placeholder="请输入联系电话"
@@ -299,6 +336,7 @@ export default class BasicForms extends PureComponent {
                   label="E-mail"
                 >
                   {getFieldDecorator('email', {
+                            initialValue: auth === undefined ? '' : auth.email,
                           })(
                             <Input
                               placeholder="请输入E-mail"
@@ -311,6 +349,7 @@ export default class BasicForms extends PureComponent {
                   label="QQ"
                 >
                   {getFieldDecorator('QQ', {
+                            initialValue: auth === undefined ? '' : auth.QQ,
                           })(
                             <Input
                               placeholder="请输入QQ"
@@ -323,6 +362,7 @@ export default class BasicForms extends PureComponent {
                   label="微信"
                 >
                   {getFieldDecorator('wechat', {
+                            initialValue: auth === undefined ? '' : auth.wechat,
                           })(
                             <Input
                               placeholder="请输入微信"
@@ -335,6 +375,7 @@ export default class BasicForms extends PureComponent {
                   label="标签"
                 >
                   {getFieldDecorator('tags', {
+
                           })(
                             <Select mode="tags" placeholder="请输入标签" prefix={<Icon type="tags" style={{ color: 'rgba(0,0,0,.25)' }} />} />
                           )}
@@ -343,13 +384,15 @@ export default class BasicForms extends PureComponent {
                   {...formItemLayout}
                   label="备注"
                 >
-                  {getFieldDecorator('remark')(
+                  {getFieldDecorator('remark', {
+                    initialValue: auth === undefined ? '' : auth.remark,
+                  })(
                     <TextArea style={{ minHeight: 32 }} placeholder="请输入备注" rows={4} prefix={<Icon type="tags" style={{ color: 'rgba(0,0,0,.25)' }} />} />
                           )}
                 </FormItem>
                 <FormItem {...submitFormLayout} style={{ marginTop: 32 }}>
                   <Button type="primary" style={{ marginRight: 8 }}><Link to="/system/user">返回</Link></Button>
-                  <Button type="primary" htmlType="button" onClick={e => this.handleSubmit(e)}>
+                  <Button type="primary" htmlType="button" onClick={e => this.handleSubmit(e, auth === undefined ? '' : auth.objectId)}>
                             提交
                   </Button>
                 </FormItem>
