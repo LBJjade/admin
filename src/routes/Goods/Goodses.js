@@ -20,7 +20,7 @@ export default class Goodses extends React.Component {
       current: 1,
       total: 0,
     },
-    limit: 15,
+    limit: 12,
     skip: 0,
   };
 
@@ -63,6 +63,7 @@ export default class Goodses extends React.Component {
       payload: {
         count: true,
         limit: this.state.limit,
+        include: 'pointerCategory',
         skip,
       },
     });
@@ -151,7 +152,7 @@ export default class Goodses extends React.Component {
             <Card>
               <div>
                 <HeaderSearch className={styles.search}>HeaderSearch</HeaderSearch>
-                <Link className={styles.addgoods} to="/goods/goods"><Icon type="plus" /> 新增商品</Link>
+                <Button type="primary"><Link className={styles.addgoods} to="/goods/goods"><Icon type="plus" /> 新增</Link></Button>
               </div>
             </Card>
           </Row>

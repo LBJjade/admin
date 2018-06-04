@@ -73,10 +73,10 @@ export async function getUserAuth(params) {
 }
 
 export async function postUserAuth(params) {
-  if (params.tags !== undefined) {
-    const tag = params.tags.join(',');
-    params.values.tags = tag;
-  }
+  // if (params.tags !== undefined) {
+  //   const tag = params.tags.join(',');
+  //   params.values.tags = tag;
+  // }
   if (params.pointerUser !== undefined) {
     params.values.pointerUser = params.pointerUser;
   }
@@ -88,10 +88,10 @@ export async function postUserAuth(params) {
 
 export async function putUserAuth(params) {
   const editid = params.objectId;
-  if (params.tags !== undefined) {
-    const tag = params.tags.join(',');
-    params.values.tags = tag;
-  }
+  // if (params.tags !== undefined) {
+  //   const tag = params.tags.join(',');
+  //   params.values.tags = tag;
+  // }
   return request(`/api/classes/UserAuth/${editid}`, {
     method: 'PUT',
     body: params.values,

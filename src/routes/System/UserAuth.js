@@ -374,8 +374,8 @@ export default class BasicForms extends PureComponent {
                   {...formItemLayout}
                   label="标签"
                 >
-                  {getFieldDecorator('tags', {
-
+                  {getFieldDecorator('tag', {
+                    initialValue: auth === undefined ? [] : auth.tag,
                           })(
                             <Select mode="tags" placeholder="请输入标签" prefix={<Icon type="tags" style={{ color: 'rgba(0,0,0,.25)' }} />} />
                           )}
