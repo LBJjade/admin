@@ -161,7 +161,7 @@ export default class BasicForms extends PureComponent {
                     renderItem={item => (
                             (
                               <div>
-                                {item.isDefault === true ? (
+                                {item.isDefault === 1 ? (
                                   <div style={{ marginBottom: 16 }}>
                                     <Card>
                                       <div>
@@ -205,7 +205,7 @@ export default class BasicForms extends PureComponent {
                     renderItem={item => (
                             (
                               <div>
-                                {item.isDefault === false ? (
+                                {item.isDefault === 0 ? (
                                   <div style={{ marginBottom: 16 }}>
                                     <Card>
                                       <div>

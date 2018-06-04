@@ -2,21 +2,25 @@ import React from 'react';
 import { connect } from 'dva';
 import { Link, routerRedux } from 'dva/router';
 // import PropTypes from 'prop-types';
-import { Row, Icon, Card, Button, Table } from 'antd';
+import { Row, Icon, Card, Button, Table, Tag, Input, message, Radio } from 'antd';
 import globalConfig from '../../config';
 import PageHeaderLayout from '../../layouts/PageHeaderLayout';
-import HeaderSearch from '../../components/HeaderSearch';
 import GoodsCard from './Card/GoodsCard';
 import styles from './Goodses.less';
 
-@connect(({ goods, group }) => ({
-  goods,
+const { Search } = Input;
+const RadioButton = Radio.Button;
+const RadioGroup = Radio.Group;
+const getValue = obj => Object.keys(obj).map(key => obj[key]).join(',');
+
+@connect(({ group, goods }) => ({
   group,
+  goods,
 }))
 export default class Goodses extends React.Component {
   state = {
     pagination: {
-      pageSize: 5,
+      pageSize: 12,
       current: 1,
       total: 0,
     },
@@ -72,23 +76,94 @@ export default class Goodses extends React.Component {
     });
   };
 
+  handleStandardTableChange = (pagination, filtersArg, sorter) => {
+    const { dispatch } = this.props;
+    const { formValues } = this.state;
+
+    const filters = Object.keys(filtersArg).reduce((obj, key) => {
+      const newObj = { ...obj };
+      newObj[key] = getValue(filtersArg[key]);
+      return newObj;
+    }, {});
+
+    const params = {
+      skip: ((pagination.current - 1) * pagination.pageSize),
+      limit: pagination.pageSize,
+      count: true,
+      ...formValues,
+      ...filters,
+    };
+    if (sorter.field) {
+      params.sorter = `${sorter.field}_${sorter.order}`;
+    }
+
+    dispatch({
+      type: 'goods/fetchGoodses',
+      payload: params,
+    });
+    this.setState({
+      pagination: {
+        current: pagination.current,
+        pageSize: pagination.pageSize,
+      },
+    });
+  };
+
+  handleSearch = (value) => {
+    const { dispatch } = this.props;
+    dispatch({
+      type: 'goods/fetchGoodses',
+      payload: {
+        where: {
+          title: {
+            $regex: `(?i)${value}`,
+          },
+        },
+      },
+    }).then(() => {
+      message.success('查询成功');
+      const { goodses } = this.props.goods;
+      this.setState({
+        pagination: {
+          count: goodses === undefined ? 0 : goodses.results.length,
+          pageSize: goodses === undefined ? 0 : goodses.results.length,
+          current: 1,
+        },
+      });
+    });
+  };
+  fetchGoodes = () => {
+    const { dispatch } = this.props;
+    dispatch({
+      type: 'goods/fetchGoodses',
+      payload: {
+        count: true,
+        limit: 12,
+        skip: 0,
+        include: 'pointerCategory',
+      },
+    });
+  };
+
   render() {
     const { goodses } = this.props.goods;
+    const { group } = this.props.group;
     const goodsesData = goodses.results;
+    const groupData = group.results;
     const { loading } = this.props;
 
     const columns = [
       {
         title: '商品主图',
         dataIndex: 'thumbs',
-        width: 180,
+        width: 120,
         render: val => (
           <img style={{ width: '100%' }} onError={e => this.handelError(e)} src={`${globalConfig.imageUrl}${val[0]}`} alt="" />
         ),
       },
       {
         title: '商品名称',
-        dataIndex: 'goodsName',
+        dataIndex: 'title',
         width: 100,
       },
       {
@@ -114,10 +189,34 @@ export default class Goodses extends React.Component {
       {
         title: '所属分类',
         dataIndex: 'pointerCategory.name',
+        filters: [{
+          text: 'London',
+          value: 'London',
+        }, {
+          text: 'New York',
+          value: 'New York',
+        }],
+        render: val => (
+          <Tag color="cyan">{val}</Tag>
+        ),
       },
       {
         title: '所属分组',
-        dataIndex: 'brandName',
+        dataIndex: 'goodsGroup',
+        width: 160,
+        render: val => (
+          groupData && val ?
+            val.map((i) => {
+              const groups = groupData.find(k => k.objectId === i);
+              if (groups) {
+                // 多个Tag需要加key区分;
+                return (<Tag color="gold" key={groups.objectId}>{groups.name}</Tag>);
+              } else {
+                return null;
+              }
+            }) :
+            null
+        ),
       },
       // {
       //   title: '操作',
@@ -140,6 +239,20 @@ export default class Goodses extends React.Component {
       // onChange: this.handlePageChange,
     };
 
+    const extraContent = (
+      <div>
+        <RadioGroup defaultValue="all">
+          <RadioButton value="all" onClick={() => this.fetchGoodes}>全部</RadioButton>
+        </RadioGroup>
+        <Search
+          className={styles.extraContentSearch}
+          placeholder="搜索"
+          enterButton
+          onSearch={value => this.handleSearch(value)}
+        />
+      </div>
+    );
+
 
     return (
       <PageHeaderLayout
@@ -149,9 +262,11 @@ export default class Goodses extends React.Component {
       >
         <div>
           <Row>
-            <Card>
+            <Card
+              title="商品列表"
+              extra={extraContent}
+            >
               <div>
-                <HeaderSearch className={styles.search}>HeaderSearch</HeaderSearch>
                 <Button type="primary"><Link className={styles.addgoods} to="/goods/goods"><Icon type="plus" /> 新增</Link></Button>
               </div>
             </Card>
@@ -171,11 +286,6 @@ export default class Goodses extends React.Component {
           <Row>
             <Card bordered={false}>
               <div className={styles.tableList}>
-                <div className={styles.tableListOperator}>
-                  <Button icon="plus" type="primary">
-                    新增
-                  </Button>
-                </div>
                 <div>
                   <Card>
                     <div>
@@ -187,7 +297,7 @@ export default class Goodses extends React.Component {
                         dataSource={goodsesData}
                         onChange={this.handleStandardTableChange}
                         // rowSelection={rowSelection}
-                        onSelectRow={this.handleSelectRows}
+                        // onSelectRow={this.handleSelectRows}
                       />
                     </div>
                   </Card>
@@ -201,8 +311,3 @@ export default class Goodses extends React.Component {
   }
 }
 
-// Goodses.propTypes = {
-//   goods: PropTypes.object,
-// }
-
-// export default connect(({ goods }) => ({ goods }))(Goodses);
