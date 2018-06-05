@@ -166,11 +166,11 @@ export default class Goodses extends React.Component {
         dataIndex: 'title',
         width: 100,
       },
-      {
-        title: '商品关键词',
-        dataIndex: 'keyword',
-        width: 200,
-      },
+      // {
+      //   title: '商品关键词',
+      //   dataIndex: 'keyword',
+      //   width: 200,
+      // },
       {
         title: '商品标题',
         dataIndex: 'title',
@@ -189,13 +189,7 @@ export default class Goodses extends React.Component {
       {
         title: '所属分类',
         dataIndex: 'pointerCategory.name',
-        filters: [{
-          text: 'London',
-          value: 'London',
-        }, {
-          text: 'New York',
-          value: 'New York',
-        }],
+        width: 100,
         render: val => (
           <Tag color="cyan">{val}</Tag>
         ),
@@ -218,15 +212,15 @@ export default class Goodses extends React.Component {
             null
         ),
       },
-      // {
-      //   title: '操作',
-      //   dataIndex: 'objectId',
-      //   render: (val, record) => (
-      //     <span>
-      //       <a onClick={() => this.handleEditModalVisible(true, `${val}`, record.brandNo, record.brandName)}>编辑  </a>
-      //       <Popconfirm title="确定删除?" onConfirm={() => this.handelDelete(`${val}`)}><a href="#">删除</a></Popconfirm>
-      //     </span>),
-      // },
+      {
+        title: '操作',
+        dataIndex: 'objectId',
+        width: 80,
+        render: val => (
+          <span>
+            <Link className={styles.addgoods} to={`/goods/goods?${val}`}>编辑</Link>
+          </span>),
+      },
     ];
 
     const paginationProps = {
@@ -268,6 +262,7 @@ export default class Goodses extends React.Component {
             >
               <div>
                 <Button type="primary"><Link className={styles.addgoods} to="/goods/goods"><Icon type="plus" /> 新增</Link></Button>
+                <Button type="primary">列表模式</Button>
               </div>
             </Card>
           </Row>
@@ -296,6 +291,7 @@ export default class Goodses extends React.Component {
                         pagination={paginationProps}
                         dataSource={goodsesData}
                         onChange={this.handleStandardTableChange}
+                        visible="false"
                         // rowSelection={rowSelection}
                         // onSelectRow={this.handleSelectRows}
                       />

@@ -56,7 +56,7 @@ class GoodsCard extends React.PureComponent {
                     </Carousel>
                   </div>
                   <div onClick={e => this.handleClick(e, item)} className={styles.card_content}>
-                    <Ellipsis lines={1}>{item.title}</Ellipsis>
+                    <Ellipsis lines={1}><div style={{ color: '#afafaf' }}>{item.title}</div></Ellipsis>
                     <h4>¥{item.price}</h4>
                   </div>
                   <div className={styles.card_footer}>
