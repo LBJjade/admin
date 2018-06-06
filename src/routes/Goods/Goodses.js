@@ -1,3 +1,4 @@
+/* eslint-disable guard-for-in */
 import React from 'react';
 import { connect } from 'dva';
 import { Link, routerRedux } from 'dva/router';
@@ -27,6 +28,7 @@ export default class Goodses extends React.Component {
     skip: 0,
     category: [],
     groups: [],
+    // 0:正常模式，1：搜索模式，2：排序模式，3：过滤模式
     pagflag: 0,
     search: '',
     // sortGoods: '',
@@ -117,16 +119,15 @@ export default class Goodses extends React.Component {
 
   handleStandardTableChange = (pagination, filtersArg, sorter) => {
     const { dispatch } = this.props;
-    const { formValues, pagflag, search } = this.state;
+    const { pagflag, search } = this.state;
 
     const params = {
       skip: ((pagination.current - 1) * pagination.pageSize),
       limit: pagination.pageSize,
       count: true,
-      ...formValues,
     };
 
-    if (sorter.field !== undefined && pagflag === 0) {
+    if (sorter.field !== undefined && pagflag !== 2) {
       // 首先进入排序模式
       dispatch({
         type: 'goods/fetchGoodses',
@@ -145,12 +146,60 @@ export default class Goodses extends React.Component {
     } else if (pagflag === 2) {
       // 排序模式中
       this.sortGoods(sorter.field, sorter.order, params, pagination.pageSize, pagination.current);
-    }
-    // 表单多种操作
-    if (filtersArg['pointerCategory.name'] !== undefined && filtersArg['pointerCategory.name'].length !== 0) {
-      // 表单filter（过滤模式）
-      const cateId = filtersArg['pointerCategory.name'][0];
-      this.filterCateGory(cateId);
+    } else if (((filtersArg['pointerCategory.name'] !== undefined && filtersArg['pointerCategory.name'].length !== 0) || (filtersArg.goodsGroup !== undefined && filtersArg.goodsGroup.length !== 0)) && pagflag !== 3) {
+      // 首先进入过滤模式
+      const filter = [];
+      // 组装filter数据
+      if (filtersArg['pointerCategory.name'] !== undefined && filtersArg['pointerCategory.name'].length !== 0) {
+        const cateId = filtersArg['pointerCategory.name'];
+        for (const k of cateId) {
+          filter.push(
+            {
+              pointerCategory: {
+                __type: 'Pointer',
+                className: 'Category',
+                objectId: k,
+              },
+            });
+        }
+      }
+      if (filtersArg.goodsGroup !== undefined && filtersArg.goodsGroup.length !== 0) {
+        const goupId = filtersArg.goodsGroup;
+        for (const k of goupId) {
+          filter.push(
+            {
+              goodsGroup: k,
+            });
+        }
+      }
+      this.filterGoods(filter, { limit: 12, skip: 0 }, pagination.pageSize, pagination.current);
+      this.setState({
+        pagflag: 3,
+      });
+    } else if (pagflag === 3) {
+      // 过滤模式中
+      const filterdouble = [];
+      // 组装filter数据
+      // const cateId = filtersArg['pointerCategory.name'];
+      const len = filtersArg['pointerCategory.name'].length;
+      for (let i = 0; i < len; i += 1) {
+        filterdouble.push(
+          {
+            pointerCategory: {
+              __type: 'Pointer',
+              className: 'Category',
+              objectId: filtersArg['pointerCategory.name'][i],
+            },
+          });
+      }
+      // const goupId = filtersArg.goodsGroup;
+      for (const k of filtersArg.goodsGroup) {
+        filterdouble.push(
+          {
+            goodsGroup: k,
+          });
+      }
+      this.filterGoods(filterdouble, params, pagination.pageSize, pagination.current);
     } else if (pagflag === 0) {
       // 表单正常分页（正常模式）
       dispatch({
@@ -192,6 +241,76 @@ export default class Goodses extends React.Component {
     if (sorter.field) {
       params.sorter = `${sorter.field}_${sorter.order}`;
     }
+    // 表单多种操作
+    // if (filtersArg['pointerCategory.name'] !== undefined && filtersArg['pointerCategory.name'].length !== 0 && pagflag !== 3) {
+    //   // 表单filter（过滤模式）
+    //   const cateId = filtersArg['pointerCategory.name'];
+    //   const filterCate = [];
+    //   // 组装filter category数据
+    //   for (const k of cateId) {
+    //     filterCate.push(
+    //       {
+    //         pointerCategory: {
+    //           __type: 'Pointer',
+    //           className: 'Category',
+    //           objectId: k,
+    //         },
+    //       });
+    //   }
+    //   this.filterCateGory(filterCate);
+    // } else if (filtersArg.goodsGroup !== undefined && filtersArg.goodsGroup.length !== 0) {
+    //   const goupId = filtersArg.goodsGroup;
+    //   const filterGroup = [];
+    //   // 组装filter Group数据
+    //   for (const k of goupId) {
+    //     filterGroup.push(
+    //       {
+    //         goodsGroup: k,
+    //       });
+    //   }
+    //   this.filterGroup(filterGroup);
+    // } else
+    // if (pagflag === 0) {
+    //   // 表单正常分页（正常模式）
+    //   dispatch({
+    //     type: 'goods/fetchGoodses',
+    //     payload: {
+    //       ...params,
+    //       include: 'pointerCategory',
+    //     },
+    //   });
+    //   this.setState({
+    //     pagination: {
+    //       current: pagination.current,
+    //       pageSize: pagination.pageSize,
+    //     },
+    //   });
+    // } else if (pagflag === 1) {
+    //   // 表单条件分页（条件模式）
+    //   dispatch({
+    //     type: 'goods/fetchGoodses',
+    //     payload: {
+    //       where: {
+    //         $or: [
+    //           { title: { $regex: `(?i)${search}` } },
+    //           { keyword: { $regex: `(?i)${search}` } },
+    //           { stock: { $regex: `(?i)${search}` } },
+    //           { price: { $regex: `(?i)${search}` } }],
+    //       },
+    //       ...params,
+    //       include: 'pointerCategory',
+    //     },
+    //   });
+    //   this.setState({
+    //     pagination: {
+    //       current: pagination.current,
+    //       pageSize: pagination.pageSize,
+    //     },
+    //   });
+    // }
+    // if (sorter.field) {
+    //   params.sorter = `${sorter.field}_${sorter.order}`;
+    // }
   };
 
   handleSearch = (value) => {
@@ -209,20 +328,23 @@ export default class Goodses extends React.Component {
       }).then(() => {
         message.success('查询成功');
         const { goodses } = this.props.goods;
-        // 变为条件模式
+        // 变为正常模式
         this.setState({
           pagination: {
             count: goodses === undefined ? 0 : goodses.results.length,
-            // pageSize: goodses === undefined ? 0 : goodses.results.length,
+            pageSize: 12,
             current: 1,
           },
-          pagflag: 1,
+          pagflag: 0,
         });
       });
     } else {
       dispatch({
         type: 'goods/fetchGoodses',
         payload: {
+          count: true,
+          limit: 12,
+          skip: 0,
           include: 'pointerCategory',
           where: {
             $or: [
@@ -239,7 +361,7 @@ export default class Goodses extends React.Component {
         this.setState({
           pagination: {
             count: goodses === undefined ? 0 : goodses.results.length,
-            // pageSize: goodses === undefined ? 0 : goodses.results.length,
+            pageSize: 12,
             current: 1,
           },
           pagflag: 1,
@@ -261,45 +383,61 @@ export default class Goodses extends React.Component {
     });
   };
 
-  filterCateGory = (id) => {
+  filterGoods = (id, p, s, c) => {
     const { dispatch } = this.props;
     dispatch({
       type: 'goods/fetchGoodses',
       payload: {
+        ...p,
         count: true,
-        limit: 12,
-        skip: 0,
+        // limit: 12,
+        // skip: 0,
         include: 'pointerCategory',
         where: {
-          pointerCategory: {
-            __type: 'Pointer',
-            className: 'Category',
-            objectId: id,
-          },
+          $or: id,
         },
       },
+    }).then(() => {
+      this.setState({
+        pagflag: 3,
+        pagination: {
+          current: c,
+          // pageSize: 12,
+        },
+      });
     });
   }
+  // filterCateGory = (id) => {
+  //   const { dispatch } = this.props;
+  //   dispatch({
+  //     type: 'goods/fetchGoodses',
+  //     payload: {
+  //       count: true,
+  //       limit: 12,
+  //       skip: 0,
+  //       include: 'pointerCategory',
+  //       where: {
+  //         $or: id,
+  //       },
+  //     },
+  //   });
+  // }
 
-  filterGroup = (id) => {
-    const { dispatch } = this.props;
-    dispatch({
-      type: 'goods/fetchGoodses',
-      payload: {
-        count: true,
-        limit: 12,
-        skip: 0,
-        include: 'pointerCategory',
-        where: {
-          pointerCategory: {
-            __type: 'Pointer',
-            className: 'Category',
-            objectId: id,
-          },
-        },
-      },
-    });
-  }
+  // filterGroup = (id) => {
+  //   const { dispatch } = this.props;
+  //   dispatch({
+  //     type: 'goods/fetchGoodses',
+  //     payload: {
+  //       count: true,
+  //       limit: 12,
+  //       skip: 0,
+  //       include: 'pointerCategory',
+  //       where: {
+  //         $or: id,
+  //       },
+  //     },
+  //   });
+  // }
 
   sortGoods = (k, m, p, s, c) => {
     const { dispatch } = this.props;
@@ -319,7 +457,7 @@ export default class Goodses extends React.Component {
           pagflag: 2,
           pagination: {
             current: c,
-            pageSize: s,
+            // pageSize: s,
           },
         });
       });
@@ -339,7 +477,7 @@ export default class Goodses extends React.Component {
           pagflag: 2,
           pagination: {
             current: c,
-            pageSize: s,
+            // pageSize: s,
           },
         });
       });
@@ -355,6 +493,9 @@ export default class Goodses extends React.Component {
     const { category } = this.state;
     const { groups } = this.state;
 
+    // category树（数据）
+    // const cateTree = [];
+    // 列树
     const colSelect = [{
       label: '商品主图',
       value: '0-0',
@@ -425,14 +566,16 @@ export default class Goodses extends React.Component {
         title: '库存',
         dataIndex: 'stock',
         key: 'stock',
-        sorter: (a, b) => a.stock - b.stock,
+        sorter: true,
+        // sorter: (a, b) => a.stock - b.stock,
         width: '10%',
       },
       {
         title: '价格',
         dataIndex: 'price',
         key: 'price',
-        sorter: (a, b) => a.price - b.price,
+        sorter: true,
+        // sorter: (a, b) => a.price - b.price,
         width: '10%',
       },
       {
@@ -534,7 +677,7 @@ export default class Goodses extends React.Component {
                   <Card>
                     <div>
                       <Table
-                        rowKey={record => record.objectId}
+                        rowKey="objectId"
                         columns={columns}
                         loading={loading}
                         pagination={paginationProps}
