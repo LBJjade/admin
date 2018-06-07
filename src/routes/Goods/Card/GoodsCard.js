@@ -45,7 +45,7 @@ class GoodsCard extends React.PureComponent {
                     <Carousel effect="fade" autoplay>
                       {
                       (
-                        item.thumbs.map(k => (
+                        item.thumbs === undefined ? '' : item.thumbs.map(k => (
                           <div className={styles.card_header}>
                             <img style={{ width: 218, height: 218 }} className={styles.card_img} onError={e => this.handelError(e)} src={`${globalConfig.imageUrl}${k}`} alt="" />
                           </div>

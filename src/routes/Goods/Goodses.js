@@ -178,28 +178,39 @@ export default class Goodses extends React.Component {
       });
     } else if (pagflag === 3) {
       // 过滤模式中
-      const filterdouble = [];
+      const filteres = [];
       // 组装filter数据
       // const cateId = filtersArg['pointerCategory.name'];
-      const len = filtersArg['pointerCategory.name'].length;
-      for (let i = 0; i < len; i += 1) {
-        filterdouble.push(
+      // const len = filtersArg['pointerCategory.name'] === undefined ? 0 : filtersArg['pointerCategory.name'].length;
+      // for (let i = 0; i < len; i += 1) {
+      //   filteres.push(
+      //     {
+      //       pointerCategory: {
+      //         __type: 'Pointer',
+      //         className: 'Category',
+      //         objectId: filtersArg['pointerCategory.name'][i],
+      //       },
+      //     });
+      // }
+      const cateIds = filtersArg['pointerCategory.name'];
+      for (const k of cateIds) {
+        filteres.push(
           {
             pointerCategory: {
               __type: 'Pointer',
               className: 'Category',
-              objectId: filtersArg['pointerCategory.name'][i],
+              objectId: k,
             },
           });
       }
       // const goupId = filtersArg.goodsGroup;
       for (const k of filtersArg.goodsGroup) {
-        filterdouble.push(
+        filteres.push(
           {
             goodsGroup: k,
           });
       }
-      this.filterGoods(filterdouble, params, pagination.pageSize, pagination.current);
+      this.filterGoods(filteres, params, pagination.pageSize, pagination.current);
     } else if (pagflag === 0) {
       // 表单正常分页（正常模式）
       dispatch({
@@ -537,7 +548,7 @@ export default class Goodses extends React.Component {
         key: 'thumbs',
         width: '10%',
         render: val => (
-          <img style={{ width: '100%' }} onError={e => this.handelError(e)} src={`${globalConfig.imageUrl}${val[0]}`} alt="" />
+          <img style={{ width: '100%' }} onError={e => this.handelError(e)} src={val === undefined ? '' : `${globalConfig.imageUrl}${val[0]}`} alt="" />
         ),
       },
       {
