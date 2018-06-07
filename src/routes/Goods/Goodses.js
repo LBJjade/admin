@@ -127,92 +127,44 @@ export default class Goodses extends React.Component {
       count: true,
     };
 
-    if (sorter.field !== undefined && pagflag !== 2) {
-      // 首先进入排序模式
-      dispatch({
-        type: 'goods/fetchGoodses',
-        payload: {
-          count: true,
-          limit: 12,
-          skip: 0,
-          include: 'pointerCategory',
-          order: sorter.field,
-        },
-      }).then(() => {
-        this.setState({
-          pagflag: 2,
-        });
-      });
-    } else if (pagflag === 2) {
-      // 排序模式中
-      this.sortGoods(sorter.field, sorter.order, params, pagination.pageSize, pagination.current);
-    } else if (((filtersArg['pointerCategory.name'] !== undefined && filtersArg['pointerCategory.name'].length !== 0) || (filtersArg.goodsGroup !== undefined && filtersArg.goodsGroup.length !== 0)) && pagflag !== 3) {
-      // 首先进入过滤模式
-      const filter = [];
-      // 组装filter数据
-      if (filtersArg['pointerCategory.name'] !== undefined && filtersArg['pointerCategory.name'].length !== 0) {
-        const cateId = filtersArg['pointerCategory.name'];
-        for (const k of cateId) {
-          filter.push(
-            {
-              pointerCategory: {
-                __type: 'Pointer',
-                className: 'Category',
-                objectId: k,
-              },
-            });
-        }
-      }
-      if (filtersArg.goodsGroup !== undefined && filtersArg.goodsGroup.length !== 0) {
-        const goupId = filtersArg.goodsGroup;
-        for (const k of goupId) {
-          filter.push(
-            {
-              goodsGroup: k,
-            });
-        }
-      }
-      this.filterGoods(filter, { limit: 12, skip: 0 }, pagination.pageSize, pagination.current);
-      this.setState({
-        pagflag: 3,
-      });
-    } else if (pagflag === 3) {
-      // 过滤模式中
-      const filteres = [];
-      // 组装filter数据
-      // const cateId = filtersArg['pointerCategory.name'];
-      // const len = filtersArg['pointerCategory.name'] === undefined ? 0 : filtersArg['pointerCategory.name'].length;
-      // for (let i = 0; i < len; i += 1) {
-      //   filteres.push(
-      //     {
-      //       pointerCategory: {
-      //         __type: 'Pointer',
-      //         className: 'Category',
-      //         objectId: filtersArg['pointerCategory.name'][i],
-      //       },
-      //     });
-      // }
-      const cateIds = filtersArg['pointerCategory.name'];
-      for (const k of cateIds) {
-        filteres.push(
+    const vals = [{ where: [{ pointerCategory: [] }, { goodsGroup: [] }] }, { order: [] }, { begin: [] }];
+    if (filtersArg['pointerCategory.name'] !== undefined && filtersArg['pointerCategory.name'].length !== 0) {
+      const cateId = filtersArg['pointerCategory.name'];
+      // 循环组装filtercate数据
+      for (const k of cateId) {
+        vals[0].where[0].pointerCategory.push(
           {
-            pointerCategory: {
-              __type: 'Pointer',
-              className: 'Category',
-              objectId: k,
-            },
+            __type: 'Pointer',
+            className: 'Category',
+            objectId: k,
           });
       }
-      // const goupId = filtersArg.goodsGroup;
-      for (const k of filtersArg.goodsGroup) {
-        filteres.push(
+    }
+    if (filtersArg.goodsGroup !== undefined && filtersArg.goodsGroup.length !== 0) {
+      // 循环组装filtergroup数据
+      const goupId = filtersArg.goodsGroup;
+      for (const k of goupId) {
+        vals[0].where[1].goodsGroup.push(
           {
-            goodsGroup: k,
+            k,
           });
       }
-      this.filterGoods(filteres, params, pagination.pageSize, pagination.current);
+    }
+
+    if (sorter.field !== undefined) {
+      vals[1].order.push(
+        sorter.field,
+      );
+      vals[2].begin.push(
+        sorter.order
+      );
+    }
+
+    // todo 判断容错处理
+    if (vals[0].where.length !== 0 || vals[1].order.length !== 0) {
+      this.goodesChange(vals[0].where[0].pointerCategory, vals[0].where[1].goodsGroup, vals[2].begin[0], vals[1].order[0], params, pagination.pageSize, pagination.current);
     } else if (pagflag === 0) {
-      // 表单正常分页（正常模式）
+      // 表单正常分页（正常模式）（没有搜索，没有排序，没有过滤）
       dispatch({
         type: 'goods/fetchGoodses',
         payload: {
@@ -227,7 +179,7 @@ export default class Goodses extends React.Component {
         },
       });
     } else if (pagflag === 1) {
-      // 表单条件分页（条件模式）
+      // 表单搜索分页（搜索模式）
       dispatch({
         type: 'goods/fetchGoodses',
         payload: {
@@ -249,17 +201,65 @@ export default class Goodses extends React.Component {
         },
       });
     }
-    if (sorter.field) {
-      params.sorter = `${sorter.field}_${sorter.order}`;
-    }
-    // 表单多种操作
-    // if (filtersArg['pointerCategory.name'] !== undefined && filtersArg['pointerCategory.name'].length !== 0 && pagflag !== 3) {
-    //   // 表单filter（过滤模式）
-    //   const cateId = filtersArg['pointerCategory.name'];
-    //   const filterCate = [];
-    //   // 组装filter category数据
-    //   for (const k of cateId) {
-    //     filterCate.push(
+
+    // if (sorter.field !== undefined && pagflag !== 2 && pagflag !== 1 && pagflag !== 3) {
+    //   // 首先进入排序模式
+    //   dispatch({
+    //     type: 'goods/fetchGoodses',
+    //     payload: {
+    //       count: true,
+    //       limit: 12,
+    //       skip: 0,
+    //       include: 'pointerCategory',
+    //       order: sorter.field,
+    //     },
+    //   }).then(() => {
+    //     this.setState({
+    //       pagflag: 2,
+    //     });
+    //   });
+    // } else if (pagflag === 2) {
+    //   // 排序模式中
+    //   this.sortGoods(sorter.field, sorter.order, params, pagination.pageSize, pagination.current);
+    // } else if (((filtersArg['pointerCategory.name'] !== undefined && filtersArg['pointerCategory.name'].length !== 0) || (filtersArg.goodsGroup !== undefined && filtersArg.goodsGroup.length !== 0)) && pagflag !== 3) {
+    //   // 如果filtercate或者filtergroup都没有选择，并且选择的不为空，并且不是已经进入了过滤模式，认为是第一次进入过滤模式
+    //   // 首先进入过滤模式
+    //   const filter = [];
+    //   // 组装filter数据
+    //   if (filtersArg['pointerCategory.name'] !== undefined && filtersArg['pointerCategory.name'].length !== 0) {
+    //     const cateId = filtersArg['pointerCategory.name'];
+    //     // 循环组装filtercate数据
+    //     for (const k of cateId) {
+    //       filter.push(
+    //         {
+    //           pointerCategory: {
+    //             __type: 'Pointer',
+    //             className: 'Category',
+    //             objectId: k,
+    //           },
+    //         });
+    //     }
+    //   }
+    //   if (filtersArg.goodsGroup !== undefined && filtersArg.goodsGroup.length !== 0) {
+    //     // 循环组装filtergroup数据
+    //     const goupId = filtersArg.goodsGroup;
+    //     for (const k of goupId) {
+    //       filter.push(
+    //         {
+    //           goodsGroup: k,
+    //         });
+    //     }
+    //   }
+    //   this.goodesChange(filter, { limit: 12, skip: 0 }, pagination.pageSize, pagination.current);
+    //   this.setState({
+    //     pagflag: 3,
+    //   });
+    // } else if (pagflag === 3) {
+    //   // 过滤模式中
+    //   const filteres = [];
+    //   const cateIds = filtersArg['pointerCategory.name'];
+    //   for (const k of cateIds) {
+    //     filteres.push(
     //       {
     //         pointerCategory: {
     //           __type: 'Pointer',
@@ -268,21 +268,15 @@ export default class Goodses extends React.Component {
     //         },
     //       });
     //   }
-    //   this.filterCateGory(filterCate);
-    // } else if (filtersArg.goodsGroup !== undefined && filtersArg.goodsGroup.length !== 0) {
-    //   const goupId = filtersArg.goodsGroup;
-    //   const filterGroup = [];
-    //   // 组装filter Group数据
-    //   for (const k of goupId) {
-    //     filterGroup.push(
+    //   for (const k of filtersArg.goodsGroup) {
+    //     filteres.push(
     //       {
     //         goodsGroup: k,
     //       });
     //   }
-    //   this.filterGroup(filterGroup);
-    // } else
-    // if (pagflag === 0) {
-    //   // 表单正常分页（正常模式）
+    //   this.goodesChange(filteres, params, pagination.pageSize, pagination.current);
+    // } else if (pagflag === 0) {
+    //   // 表单正常分页（正常模式）（没有搜索，没有排序，没有过滤）
     //   dispatch({
     //     type: 'goods/fetchGoodses',
     //     payload: {
@@ -297,7 +291,7 @@ export default class Goodses extends React.Component {
     //     },
     //   });
     // } else if (pagflag === 1) {
-    //   // 表单条件分页（条件模式）
+    //   // 表单搜索分页（搜索模式）
     //   dispatch({
     //     type: 'goods/fetchGoodses',
     //     payload: {
@@ -325,6 +319,7 @@ export default class Goodses extends React.Component {
   };
 
   handleSearch = (value) => {
+    // 搜索模式（首次进入）
     const { dispatch } = this.props;
     this.setState({ search: value });
     if (value === '') {
@@ -394,85 +389,154 @@ export default class Goodses extends React.Component {
     });
   };
 
-  filterGoods = (id, p, s, c) => {
+  goodesChange = (cid, gid, m, o, p, s, c) => {
+    // 统一过滤方法
     const { dispatch } = this.props;
-    dispatch({
-      type: 'goods/fetchGoodses',
-      payload: {
-        ...p,
-        count: true,
-        // limit: 12,
-        // skip: 0,
-        include: 'pointerCategory',
-        where: {
-          $or: id,
-        },
-      },
-    }).then(() => {
-      this.setState({
-        pagflag: 3,
-        pagination: {
-          current: c,
-          // pageSize: 12,
-        },
-      });
-    });
-  }
-  // filterCateGory = (id) => {
-  //   const { dispatch } = this.props;
-  //   dispatch({
-  //     type: 'goods/fetchGoodses',
-  //     payload: {
-  //       count: true,
-  //       limit: 12,
-  //       skip: 0,
-  //       include: 'pointerCategory',
-  //       where: {
-  //         $or: id,
-  //       },
-  //     },
-  //   });
-  // }
-
-  // filterGroup = (id) => {
-  //   const { dispatch } = this.props;
-  //   dispatch({
-  //     type: 'goods/fetchGoodses',
-  //     payload: {
-  //       count: true,
-  //       limit: 12,
-  //       skip: 0,
-  //       include: 'pointerCategory',
-  //       where: {
-  //         $or: id,
-  //       },
-  //     },
-  //   });
-  // }
-
-  sortGoods = (k, m, p, s, c) => {
-    const { dispatch } = this.props;
-    if (m === 'ascend') {
-      dispatch({
-        type: 'goods/fetchGoodses',
-        payload: {
-          ...p,
-          count: true,
-          // limit: 12,
-          // skip: 0,
-          include: 'pointerCategory',
-          order: k,
-        },
-      }).then(() => {
-        this.setState({
-          pagflag: 2,
-          pagination: {
-            current: c,
-            // pageSize: s,
+    // const idJson = {
+    //   ...id,
+    // }
+    // const ids = JSON.stringify(id);
+    // const idJson0 = ids.replace('[', '');
+    // const idJson1 = idJson0.replace(']', '');
+    // const idJson2 = JSON.parse(JSON.stringify(idJson1));
+    // const idJson = {
+    //   ...idJson2,
+    // }
+    let whereGoods = [];
+    if (cid.length !== 0 && gid.length !== 0) {
+      whereGoods = [
+        {
+          where: {
+            pointerCategory: {
+              $in: {
+                cid,
+              },
+            },
+            goodsGroup: {
+              $inQuery: {
+                gid,
+              },
+            },
           },
+        },
+      ];
+    } else if (cid.length !== 0 && gid.length === 0) {
+      whereGoods = [
+        {
+          where: {
+            pointerCategory: {
+              $in: {
+                cid,
+              },
+            },
+          },
+        },
+      ];
+    } else if (cid.length === 0 && gid.length !== 0) {
+      whereGoods = [
+        {
+          where: {
+            goodsGroup: {
+              $inQuery: {
+                gid,
+              },
+            },
+          },
+        },
+      ];
+    }
+
+    const whereGoodes = whereGoods[0];
+
+    if ((cid.length !== 0 || gid.length !== 0) && m !== undefined) {
+      if (m === 'ascend') {
+        dispatch({
+          type: 'goods/fetchGoodses',
+          payload: {
+            ...p,
+            count: true,
+            // limit: 12,
+            // skip: 0,
+            include: 'pointerCategory',
+            ...whereGoodes,
+            // ...id,
+            order: o,
+          },
+        }).then(() => {
+          this.setState({
+            pagflag: 3,
+            pagination: {
+              current: c,
+              // pageSize: 12,
+            },
+          });
         });
-      });
-    } else if (m === 'descend') {
+      } else if (m === 'descend') {
+        dispatch({
+          type: 'goods/fetchGoodses',
+          payload: {
+            ...p,
+            count: true,
+            // limit: 12,
+            // skip: 0,
+            include: 'pointerCategory',
+            ...whereGoodes,
+            // ...id,
+            order: `-${o}`,
+          },
+        }).then(() => {
+          this.setState({
+            pagflag: 3,
+            pagination: {
+              current: c,
+              // pageSize: 12,
+            },
+          });
+        });
+      }
+    } else if ((cid.length !== 0 && gid.length !== 0) && m !== undefined) {
+      if (m === 'ascend') {
+        dispatch({
+          type: 'goods/fetchGoodses',
+          payload: {
+            ...p,
+            count: true,
+            // limit: 12,
+            // skip: 0,
+            include: 'pointerCategory',
+            order: o,
+          },
+        }).then(() => {
+          this.setState({
+            pagflag: 3,
+            pagination: {
+              current: c,
+              // pageSize: 12,
+            },
+          });
+        });
+      } else if (m === 'descend') {
+        dispatch({
+          type: 'goods/fetchGoodses',
+          payload: {
+            ...p,
+            count: true,
+            // limit: 12,
+            // skip: 0,
+            include: 'pointerCategory',
+            order: `-${o}`,
+          },
+        }).then(() => {
+          this.setState({
+            pagflag: 3,
+            pagination: {
+              current: c,
+              // pageSize: 12,
+            },
+          });
+        });
+      }
+    } else if ((cid.length !== 0 || gid.length !== 0) && m === undefined) {
       dispatch({
         type: 'goods/fetchGoodses',
         payload: {
@@ -481,14 +545,15 @@ export default class Goodses extends React.Component {
           // limit: 12,
           // skip: 0,
           include: 'pointerCategory',
-          order: `-${k}`,
+          ...whereGoodes,
+          // ...id,
         },
       }).then(() => {
         this.setState({
-          pagflag: 2,
+          pagflag: 3,
           pagination: {
             current: c,
-            // pageSize: s,
+            // pageSize: 12,
           },
         });
       });
@@ -606,7 +671,7 @@ export default class Goodses extends React.Component {
         key: 'goodsGroup',
         width: '15%',
         filters: groups,
-        onFilter: (value, record) => record.goodsGroup.indexOf(value) === 0,
+        // onFilter: (value, record) => record.goodsGroup.indexOf(value) === 0,
         render: val => (
           groupData && val ?
             val.map((i) => {
@@ -650,7 +715,7 @@ export default class Goodses extends React.Component {
             treeCheckable
             treeData={colSelect}
             placeholder="请选择列"
-            style={{ marginLeft: 20, width: 400 }}
+            style={{ marginLeft: 20, marginRight: 20, width: 400 }}
             defaultValue={['0-0', '0-1', '0-2', '0-3', '0-4', '0-5', '0-6', '0-7']}
           />
         </RadioGroup>
