@@ -28,7 +28,6 @@ export default class Goodses extends React.Component {
     skip: 0,
     category: [],
     groups: [],
-    // 0:正常模式，1：搜索模式，2：排序模式，3：过滤模式
     pagflag: 0,
     search: '',
     // sortGoods: '',
@@ -198,121 +197,6 @@ export default class Goodses extends React.Component {
         },
       });
     }
-
-    // if (sorter.field !== undefined && pagflag !== 2 && pagflag !== 1 && pagflag !== 3) {
-    //   // 首先进入排序模式
-    //   dispatch({
-    //     type: 'goods/fetchGoodses',
-    //     payload: {
-    //       count: true,
-    //       limit: 12,
-    //       skip: 0,
-    //       include: 'pointerCategory',
-    //       order: sorter.field,
-    //     },
-    //   }).then(() => {
-    //     this.setState({
-    //       pagflag: 2,
-    //     });
-    //   });
-    // } else if (pagflag === 2) {
-    //   // 排序模式中
-    //   this.sortGoods(sorter.field, sorter.order, params, pagination.pageSize, pagination.current);
-    // } else if (((filtersArg['pointerCategory.name'] !== undefined && filtersArg['pointerCategory.name'].length !== 0) || (filtersArg.goodsGroup !== undefined && filtersArg.goodsGroup.length !== 0)) && pagflag !== 3) {
-    //   // 如果filtercate或者filtergroup都没有选择，并且选择的不为空，并且不是已经进入了过滤模式，认为是第一次进入过滤模式
-    //   // 首先进入过滤模式
-    //   const filter = [];
-    //   // 组装filter数据
-    //   if (filtersArg['pointerCategory.name'] !== undefined && filtersArg['pointerCategory.name'].length !== 0) {
-    //     const cateId = filtersArg['pointerCategory.name'];
-    //     // 循环组装filtercate数据
-    //     for (const k of cateId) {
-    //       filter.push(
-    //         {
-    //           pointerCategory: {
-    //             __type: 'Pointer',
-    //             className: 'Category',
-    //             objectId: k,
-    //           },
-    //         });
-    //     }
-    //   }
-    //   if (filtersArg.goodsGroup !== undefined && filtersArg.goodsGroup.length !== 0) {
-    //     // 循环组装filtergroup数据
-    //     const goupId = filtersArg.goodsGroup;
-    //     for (const k of goupId) {
-    //       filter.push(
-    //         {
-    //           goodsGroup: k,
-    //         });
-    //     }
-    //   }
-    //   this.goodesChange(filter, { limit: 12, skip: 0 }, pagination.pageSize, pagination.current);
-    //   this.setState({
-    //     pagflag: 3,
-    //   });
-    // } else if (pagflag === 3) {
-    //   // 过滤模式中
-    //   const filteres = [];
-    //   const cateIds = filtersArg['pointerCategory.name'];
-    //   for (const k of cateIds) {
-    //     filteres.push(
-    //       {
-    //         pointerCategory: {
-    //           __type: 'Pointer',
-    //           className: 'Category',
-    //           objectId: k,
-    //         },
-    //       });
-    //   }
-    //   for (const k of filtersArg.goodsGroup) {
-    //     filteres.push(
-    //       {
-    //         goodsGroup: k,
-    //       });
-    //   }
-    //   this.goodesChange(filteres, params, pagination.pageSize, pagination.current);
-    // } else if (pagflag === 0) {
-    //   // 表单正常分页（正常模式）（没有搜索，没有排序，没有过滤）
-    //   dispatch({
-    //     type: 'goods/fetchGoodses',
-    //     payload: {
-    //       ...params,
-    //       include: 'pointerCategory',
-    //     },
-    //   });
-    //   this.setState({
-    //     pagination: {
-    //       current: pagination.current,
-    //       pageSize: pagination.pageSize,
-    //     },
-    //   });
-    // } else if (pagflag === 1) {
-    //   // 表单搜索分页（搜索模式）
-    //   dispatch({
-    //     type: 'goods/fetchGoodses',
-    //     payload: {
-    //       where: {
-    //         $or: [
-    //           { title: { $regex: `(?i)${search}` } },
-    //           { keyword: { $regex: `(?i)${search}` } },
-    //           { stock: { $regex: `(?i)${search}` } },
-    //           { price: { $regex: `(?i)${search}` } }],
-    //       },
-    //       ...params,
-    //       include: 'pointerCategory',
-    //     },
-    //   });
-    //   this.setState({
-    //     pagination: {
-    //       current: pagination.current,
-    //       pageSize: pagination.pageSize,
-    //     },
-    //   });
-    // }
-    // if (sorter.field) {
-    //   params.sorter = `${sorter.field}_${sorter.order}`;
-    // }
   };
 
   handleSearch = (value) => {
@@ -606,12 +490,6 @@ export default class Goodses extends React.Component {
         sorter: true,
         // sorter: (a, b) => a.keyword.length - b.keyword.length,
       },
-      // {
-      //   title: '商品标题',
-      //   dataIndex: 'title',
-      //   key: 'title',
-      //   width: '20%',
-      // },
       {
         title: '库存',
         dataIndex: 'stock',
@@ -634,7 +512,6 @@ export default class Goodses extends React.Component {
         key: 'pointerCategory.name',
         width: '10%',
         filters: category,
-        // onFilter: value => this.filterCateGory(value),
         render: val => (
           <Tag color="cyan">{val}</Tag>
         ),
