@@ -158,7 +158,7 @@ export default class Goodses extends React.Component {
     }
 
     // todo 判断容错处理
-    if (vals[0].where.length !== 0 || vals[1].order.length !== 0) {
+    if ((vals[0].where[0].pointerCategory.length !== 0 || vals[0].where[1].goodsGroup.length !== 0) || vals[1].order.length !== 0) {
       this.goodesChange(vals[0].where[0].pointerCategory, vals[0].where[1].goodsGroup, vals[2].begin[0], vals[1].order[0], params, pagination.pageSize, pagination.current);
     } else if (pagflag === 0) {
       // 表单正常分页（正常模式）（没有搜索，没有排序，没有过滤）
@@ -413,12 +413,6 @@ export default class Goodses extends React.Component {
           },
         },
       ];
-      // for (const k of cid) {
-      //   whereGoods[0].where.pointerCategory.$in.push(k);
-      // }
-      // for (const i of gid) {
-      //   whereGoods[0].where.goodsGroup.goodsGroup.push(i);
-      // }
     } else if (cid.length !== 0 && gid.length === 0) {
       whereGoods = [
         {
@@ -429,9 +423,6 @@ export default class Goodses extends React.Component {
           },
         },
       ];
-      // for (const k of cid) {
-      //   whereGoods[0].where.pointerCategory.$in.push(k);
-      // }
     } else if (cid.length === 0 && gid.length !== 0) {
       whereGoods = [
         {
@@ -442,9 +433,6 @@ export default class Goodses extends React.Component {
           },
         },
       ];
-      // for (const k of gid) {
-      //   whereGoods[0].where.goodsGroup.goodsGroup.push(k);
-      // }
     }
 
     const whereGoodes = whereGoods[0];
@@ -456,11 +444,8 @@ export default class Goodses extends React.Component {
           payload: {
             ...p,
             count: true,
-            // limit: 12,
-            // skip: 0,
             include: 'pointerCategory',
             ...whereGoodes,
-            // ...id,
             order: o,
           },
         }).then(() => {
@@ -468,7 +453,6 @@ export default class Goodses extends React.Component {
             pagflag: 3,
             pagination: {
               current: c,
-              // pageSize: 12,
             },
           });
         });
@@ -478,11 +462,8 @@ export default class Goodses extends React.Component {
           payload: {
             ...p,
             count: true,
-            // limit: 12,
-            // skip: 0,
             include: 'pointerCategory',
             ...whereGoodes,
-            // ...id,
             order: `-${o}`,
           },
         }).then(() => {
@@ -490,12 +471,11 @@ export default class Goodses extends React.Component {
             pagflag: 3,
             pagination: {
               current: c,
-              // pageSize: 12,
             },
           });
         });
       }
-    } else if ((cid.length !== 0 && gid.length !== 0) && m !== undefined) {
+    } else if ((cid.length === 0 && gid.length === 0) && m !== undefined) {
       if (m === 'ascend') {
         dispatch({
           type: 'goods/fetchGoodses',
@@ -522,8 +502,6 @@ export default class Goodses extends React.Component {
           payload: {
             ...p,
             count: true,
-            // limit: 12,
-            // skip: 0,
             include: 'pointerCategory',
             order: `-${o}`,
           },
@@ -532,7 +510,6 @@ export default class Goodses extends React.Component {
             pagflag: 3,
             pagination: {
               current: c,
-              // pageSize: 12,
             },
           });
         });
@@ -543,18 +520,14 @@ export default class Goodses extends React.Component {
         payload: {
           ...p,
           count: true,
-          // limit: 12,
-          // skip: 0,
           include: 'pointerCategory',
           ...whereGoodes,
-          // ...id,
         },
       }).then(() => {
         this.setState({
           pagflag: 3,
           pagination: {
             current: c,
-            // pageSize: 12,
           },
         });
       });
