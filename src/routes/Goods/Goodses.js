@@ -144,10 +144,7 @@ export default class Goodses extends React.Component {
       // 循环组装filtergroup数据
       const goupId = filtersArg.goodsGroup;
       for (const k of goupId) {
-        vals[0].where[1].goodsGroup.push(
-          {
-            k,
-          });
+        vals[0].where[1].goodsGroup.push(k);
       }
     }
 
@@ -408,42 +405,46 @@ export default class Goodses extends React.Component {
         {
           where: {
             pointerCategory: {
-              $in: {
-                cid,
-              },
+              $in: cid,
             },
             goodsGroup: {
-              $inQuery: {
-                gid,
-              },
+              $all: gid,
             },
           },
         },
       ];
+      // for (const k of cid) {
+      //   whereGoods[0].where.pointerCategory.$in.push(k);
+      // }
+      // for (const i of gid) {
+      //   whereGoods[0].where.goodsGroup.goodsGroup.push(i);
+      // }
     } else if (cid.length !== 0 && gid.length === 0) {
       whereGoods = [
         {
           where: {
             pointerCategory: {
-              $in: {
-                cid,
-              },
+              $in: cid,
             },
           },
         },
       ];
+      // for (const k of cid) {
+      //   whereGoods[0].where.pointerCategory.$in.push(k);
+      // }
     } else if (cid.length === 0 && gid.length !== 0) {
       whereGoods = [
         {
           where: {
             goodsGroup: {
-              $inQuery: {
-                gid,
-              },
+              $all: gid,
             },
           },
         },
       ];
+      // for (const k of gid) {
+      //   whereGoods[0].where.goodsGroup.goodsGroup.push(k);
+      // }
     }
 
     const whereGoodes = whereGoods[0];
